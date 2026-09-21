@@ -1,11 +1,12 @@
 # BloodLink
 
-BloodLink is a comprehensive, desktop-based blood donation management system built to seamlessly connect blood donors with requesters. Developed as an academic project for the Islamic University of Technology (IUT), this application leverages advanced location services, optical character recognition (OCR) for identity verification, and a gamified reward system to encourage and streamline the blood donation process.
+BloodLink is a comprehensive, desktop-based blood donation management system built to seamlessly connect blood donors with requesters. Developed as an academic project for the CSE 4402 Visual Programming course, this application leverages advanced location services, optical character recognition (OCR) for identity verification, and a gamified reward system to encourage and streamline the blood donation process.
 
 ## Demonstration
 
-**Youtube link: ** [Presentation video on YouTube](https://www.youtube.com/watch?v=vGDVH0pWq_4)
-**Drive link: ** [Presentation video on Google Drive](https://drive.google.com/drive/u/1/folders/1EYvY_by4-XlE5A1ahsHOP2dPUSUibkqY)
+**YouTube link:** [Presentation video on YouTube]((2) BloodLink VP Presentation - YouTube)
+
+**Drive link:** [Presentation video on Google Drive](CSE 4402 VP final project- BloodLink_presentation - Google Drive)
 
 ## Team Members
 
