@@ -1,0 +1,25 @@
+{
+  "_comment": "Edit this file to change the About page. No rebuild needed. Team photos go in resources/com/bloodlink/images/team/ using the 'photo' name below; gallery images go in resources/com/bloodlink/images/ using the 'image' name. Nothing in this file names a file path on screen -- the About page is shown to an audience, not to whoever maintains it.",
+
+  "story": [
+    "BloodLink exists because finding a matching blood donor in an emergency is still, for most people in Bangladesh, a matter of phoning around and hoping. The people who need blood are rarely in a position to run a search, and the people willing to give it have no way of knowing they are needed.",
+    "The app keeps a verified donor register, matches a request to the donors who are actually eligible and actually close by, and puts the two in direct contact. Nothing here is a marketplace: blood is never bought or sold through BloodLink, and donors are never paid."
+  ],
+
+  "team": [
+    { "name": "Md. Woasif Mehmud Issmam", "role": "UI, Controllers, OCR & Maps", "photo": "woasif.jpg", "note": "" },
+    { "name": "Samin Sawban Rayed", "role": "Models, Core Services & Assets", "photo": "samin.jpg", "note": "" },
+    { "name": "Sunbim Haque Niloy", "role": "Database & Architecture", "photo": "niloy.jpg", "note": "" }
+  ],
+
+  "gallery": [
+    { "image": "community-1.jpg", "caption": "Community drive" },
+    { "image": "donation-step.jpg", "caption": "At the donation centre" }
+  ],
+
+  "contact": {
+    "email": "hello@bloodlink.app",
+    "phone": "",
+    "note": "Replace these with your real contact details before the app is handed to anyone."
+  }
+}
