@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Requester workspace, on the same sidebar shell as the donor side: a NavRail
+  the controller injects into navRailHost, and one page per destination
+  inside the PageHost, swapped with a slide-and-fade.
+
+  Artwork: ImageSlot placeholders print the file to drop into
+  resources/com/bloodlink/images/ to replace them.
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.web.WebView?>
+<?import com.bloodlink.view.shell.PageHost?>
+
+<HBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.bloodlink.controller.RequesterDashboardController"
+      styleClass="app-shell"
+      stylesheets="@../css/theme.css"
+      prefWidth="1380" prefHeight="860">
+
+    <StackPane fx:id="navRailHost"/>
+
+    <PageHost fx:id="pageHost" HBox.hgrow="ALWAYS">
+
+        <!-- ============================ 0 · HOME ============================ -->
+        <ScrollPane fx:id="pageHome" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="homeHeroHost"/>
+                <HBox fx:id="homeMetricsRow" spacing="18" styleClass="hero-overlap">
+                    <VBox styleClass="surface-card" spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="OPEN REQUESTS" styleClass="metric-label"/>
+                        <Label fx:id="openRequestsLabel" text="—" styleClass="metric-value"/>
+                    </VBox>
+                    <VBox styleClass="surface-card" spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="UNITS SECURED" styleClass="metric-label"/>
+                        <Label fx:id="unitsSecuredLabel" text="—" styleClass="metric-value"/>
+                    </VBox>
+                    <VBox styleClass="surface-card" spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="SAVED DONORS" styleClass="metric-label"/>
+                        <Label fx:id="savedDonorsLabel" text="—" styleClass="metric-value"/>
+                    </VBox>
+                    <VBox styleClass="surface-card-tint" spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="FULFILLED" styleClass="metric-label"/>
+                        <Label fx:id="fulfilledLabel" text="—" styleClass="metric-value"/>
+                    </VBox>
+                </HBox>
+                <VBox styleClass="page-gutter">
+                    <VBox fx:id="homeActionsHost" spacing="14"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ========================= 1 · NEW REQUEST ======================== -->
+        <ScrollPane fx:id="pageNewRequest" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="newRequestHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="18">
+                    <!-- Where you are matters as much as the hospital: it is
+                         what ranks donors for this request. -->
+                    <VBox fx:id="newRequestLocationHost"/>
+                    <VBox styleClass="surface-card" spacing="18">
+                        <GridPane hgap="18" vgap="16">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="50"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                                <Label text="BLOOD GROUP" styleClass="field-label"/>
+                                <ComboBox fx:id="bloodGroupCombo" maxWidth="Infinity" promptText="Select blood group"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                                <Label text="UNITS NEEDED" styleClass="field-label"/>
+                                <Spinner fx:id="unitsSpinner" editable="true" maxWidth="Infinity"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="0">
+                                <Label text="URGENCY" styleClass="field-label"/>
+                                <ComboBox fx:id="urgencyCombo" maxWidth="Infinity" promptText="Select urgency"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                                <Label text="DEADLINE" styleClass="field-label"/>
+                                <DatePicker fx:id="deadlinePicker" maxWidth="Infinity"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                                <Label text="HOSPITAL" styleClass="field-label"/>
+                                <ComboBox fx:id="hospitalCombo" editable="true" maxWidth="Infinity"
+                                          promptText="Search hospital name..."/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                                <Label text="DISTRICT" styleClass="field-label"/>
+                                <TextField fx:id="requestDistrictField" promptText="District"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2">
+                                <Label text="NOTES" styleClass="field-label"/>
+                                <TextArea fx:id="notesArea" prefRowCount="3" wrapText="true"
+                                          promptText="Additional context for donors (optional)"/>
+                            </VBox>
+                        </GridPane>
+                        <HBox spacing="14" alignment="CENTER_LEFT">
+                            <Button text="Submit request" styleClass="button-pill" onAction="#createRequest"/>
+                            <Label fx:id="requestMessageLabel" styleClass="message-text" wrapText="true"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ========================= 2 · MY REQUESTS ======================== -->
+        <ScrollPane fx:id="pageRequests" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="requestsHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="18">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="Confirm received" styleClass="button-pill" onAction="#confirmReceived"/>
+                        <Button text="Rematch" styleClass="button-ghost" onAction="#rematchSelected"/>
+                        <Button text="Rate donor" styleClass="button-ghost" onAction="#rateDonor"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Set my exact location" styleClass="button-ghost" onAction="#setExactLocation"/>
+                        <Button text="Detect my area" styleClass="button-ghost" onAction="#detectArea"/>
+                        <Button text="Refresh" styleClass="button-ghost" onAction="#refreshAll"/>
+                        <Button text="Cancel request" styleClass="button-danger-outline" onAction="#cancelSelected"/>
+                    </HBox>
+
+                    <VBox styleClass="surface-card" spacing="12">
+                        <Label text="Your requests" styleClass="section-head-title"/>
+                        <TableView fx:id="requestTable" prefHeight="230">
+                            <columns>
+                                <TableColumn fx:id="requestIdColumn" text="ID" prefWidth="55"/>
+                                <TableColumn fx:id="requestBloodColumn" text="Group" prefWidth="80"/>
+                                <TableColumn fx:id="unitsColumn" text="Units" prefWidth="70"/>
+                                <TableColumn fx:id="progressColumn" text="Progress" prefWidth="120"/>
+                                <TableColumn fx:id="urgencyColumn" text="Urgency" prefWidth="100"/>
+                                <TableColumn fx:id="hospitalColumn" text="Hospital" prefWidth="240"/>
+                                <TableColumn fx:id="districtColumn" text="District" prefWidth="120"/>
+                                <TableColumn fx:id="deadlineColumn" text="Deadline" prefWidth="110"/>
+                                <TableColumn fx:id="statusColumn" text="Status" prefWidth="120"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+
+                    <HBox spacing="18">
+                        <VBox styleClass="surface-card" spacing="12" prefWidth="520">
+                            <Label text="Matched donors" styleClass="section-head-title"/>
+                            <Label text="Double-click a donor, or use Profile, to see their full profile."
+                                   styleClass="section-head-sub" wrapText="true"/>
+                            <ListView fx:id="matchList" styleClass="card-list" prefHeight="330"/>
+                        </VBox>
+                        <VBox styleClass="surface-card" spacing="12" HBox.hgrow="ALWAYS">
+                            <Label text="Where they are" styleClass="section-head-title"/>
+                            <StackPane VBox.vgrow="ALWAYS">
+                                <WebView fx:id="mapView" prefHeight="330"/>
+                            </StackPane>
+                        </VBox>
+                    </HBox>
+
+                    <VBox styleClass="surface-card" spacing="12">
+                        <Label text="Lifecycle history" styleClass="section-head-title"/>
+                        <TableView fx:id="historyTable" prefHeight="220">
+                            <columns>
+                                <TableColumn fx:id="historyFromColumn" text="From" prefWidth="120"/>
+                                <TableColumn fx:id="historyToColumn" text="To" prefWidth="120"/>
+                                <TableColumn fx:id="historyActorColumn" text="By" prefWidth="160"/>
+                                <TableColumn fx:id="historyNoteColumn" text="Note" prefWidth="340"/>
+                                <TableColumn fx:id="historyTimeColumn" text="When" prefWidth="170"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ========================= 3 · FAVOURITES ========================= -->
+        <ScrollPane fx:id="pageFavorites" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="favoritesHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="18">
+                    <VBox styleClass="surface-card" spacing="12">
+                        <ListView fx:id="favoriteDonorList" styleClass="card-list" prefHeight="520"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ========================= 4 · LEADERBOARD ======================== -->
+        <ScrollPane fx:id="pageLeaderboard" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="leaderboardHeroHost"/>
+                <VBox fx:id="leaderboardHost" styleClass="page-gutter" spacing="18"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ======================== 5 · NOTIFICATIONS ======================= -->
+        <ScrollPane fx:id="pageNotifications" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="notificationsHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="18">
+                    <HBox alignment="CENTER_LEFT">
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Mark all read" styleClass="button-pill" onAction="#markAllNotificationsRead"/>
+                    </HBox>
+                    <VBox styleClass="surface-card" spacing="12">
+                        <ListView fx:id="notificationList" styleClass="notification-list" prefHeight="520"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ======================== 6 · NEWS AND IMPACT ===================== -->
+        <ScrollPane fx:id="pageNews" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="newsHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="30">
+                    <VBox fx:id="newsHost" spacing="12"/>
+                    <VBox fx:id="awarenessHost" spacing="12"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ============================ 7 · HELP =========================== -->
+        <ScrollPane fx:id="pageHelp" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="helpHeroHost"/>
+                <VBox fx:id="helpContainer" styleClass="page-gutter" spacing="18"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- =========================== 6 · PROFILE ========================== -->
+        <ScrollPane fx:id="pageProfile" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="profileHeroHost"/>
+                <VBox styleClass="page-gutter" spacing="20">
+
+                    <HBox styleClass="surface-card" spacing="22" alignment="CENTER_LEFT">
+                        <StackPane onMouseClicked="#changeProfilePhoto" style="-fx-cursor: hand;">
+                            <ImageView fx:id="profilePhotoView" fitWidth="96" fitHeight="96"
+                                       preserveRatio="false" styleClass="avatar-photo" visible="false" managed="false">
+                                <clip><Rectangle width="96" height="96" arcWidth="21" arcHeight="21"/></clip>
+                            </ImageView>
+                            <Label fx:id="profileInitialsLabel" styleClass="avatar-initials, avatar-initials-lg" text="?"/>
+                        </StackPane>
+                        <VBox spacing="8">
+                            <Label text="Profile photo" styleClass="section-head-title"/>
+                            <Label text="Shown to the donors matched with your requests."
+                                   styleClass="section-head-sub" wrapText="true"/>
+                            <HBox spacing="10">
+                                <Button fx:id="uploadPhotoButton" text="Upload photo" styleClass="button-pill" onAction="#uploadPhoto"/>
+                                <Button fx:id="removePhotoButton" text="Remove" styleClass="button-ghost" onAction="#removePhoto"/>
+                            </HBox>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <VBox spacing="3" alignment="CENTER_RIGHT">
+                            <Label text="NID NUMBER" styleClass="metric-label"/>
+                            <Label fx:id="nidLabel" text="Not Provided" styleClass="metric-value, metric-value-sm"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox styleClass="surface-card" spacing="16">
+                        <Label text="Contact information" styleClass="section-head-title"/>
+                        <GridPane hgap="18" vgap="15">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="50"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                                <Label text="FULL NAME" styleClass="field-label"/>
+                                <TextField fx:id="nameField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                                <Label text="EMAIL" styleClass="field-label"/>
+                                <Label fx:id="emailLabel" text="" styleClass="metric-value, metric-value-sm"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="0">
+                                <Label text="PHONE" styleClass="field-label"/>
+                                <TextField fx:id="phoneField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                                <Label text="DISTRICT" styleClass="field-label"/>
+                                <TextField fx:id="profileDistrictField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="0">
+                                <Label text="GUARDIAN NAME" styleClass="field-label"/>
+                                <TextField fx:id="guardianNameField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                                <Label text="GUARDIAN PHONE" styleClass="field-label"/>
+                                <TextField fx:id="guardianPhoneField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2">
+                                <Label text="ADDRESS" styleClass="field-label"/>
+                                <TextArea fx:id="addressArea" prefRowCount="2" wrapText="true"/>
+                            </VBox>
+                        </GridPane>
+                        <HBox>
+                            <Button text="Save contact info" styleClass="button-pill" onAction="#saveProfile"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox styleClass="surface-card" spacing="16">
+                        <Label text="Change password" styleClass="section-head-title"/>
+                        <GridPane hgap="18" vgap="15">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="33"/>
+                                <ColumnConstraints percentWidth="33"/>
+                                <ColumnConstraints percentWidth="34"/>
+                            </columnConstraints>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                                <Label text="CURRENT PASSWORD" styleClass="field-label"/>
+                                <PasswordField fx:id="oldPasswordField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                                <Label text="NEW PASSWORD" styleClass="field-label"/>
+                                <PasswordField fx:id="newPasswordField"/>
+                            </VBox>
+                            <VBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="2">
+                                <Label text="CONFIRM NEW" styleClass="field-label"/>
+                                <PasswordField fx:id="confirmPasswordField"/>
+                            </VBox>
+                        </GridPane>
+                        <HBox spacing="14" alignment="CENTER_LEFT">
+                            <Button text="Change password" styleClass="button-pill" onAction="#changePassword"/>
+                            <Label fx:id="profileMessageLabel" styleClass="message-text" wrapText="true"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- ============================ 9 · ABOUT ========================== -->
+        <ScrollPane fx:id="pageAbout" fitToWidth="true" styleClass="page-scroll" hbarPolicy="NEVER">
+            <VBox styleClass="page-body">
+                <VBox fx:id="aboutHeroHost"/>
+                <VBox fx:id="aboutHost" styleClass="page-gutter" spacing="18"/>
+            </VBox>
+        </ScrollPane>
+
+    </PageHost>
+</HBox>

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.transform.Scale?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import com.bloodlink.view.components.ActivityFeed?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bloodlink.controller.AdminDashboardController"
+            styleClass="app-background"
+            stylesheets="@../css/theme.css"
+            prefWidth="1320" prefHeight="840">
+
+    <top>
+        <HBox styleClass="topbar" spacing="14" alignment="CENTER_LEFT">
+            <padding><Insets top="14" right="22" bottom="14" left="22"/></padding>
+            <StackPane onMouseClicked="#changeLogo" style="-fx-cursor: hand;">
+                <SVGPath content="M14,0 C14,0 4.2,12.6 4.2,18.2 A9.8,9.8 0 0 0 23.8,18.2 C23.8,12.6 14,0 14,0 Z" styleClass="brand-icon"/>
+                <ImageView fx:id="appLogoView" fitWidth="24" fitHeight="24" preserveRatio="true"/>
+            </StackPane>
+            <Label text="BloodLink" styleClass="header-brand"/>
+            <Label text="Admin Command Center" styleClass="topbar-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER" spacing="8" onMouseClicked="#changeProfilePhoto" style="-fx-cursor: hand;">
+                <ImageView fx:id="profilePhotoView" fitWidth="32" fitHeight="32" preserveRatio="true">
+                    <clip><javafx.scene.shape.Circle centerX="16" centerY="16" radius="16"/></clip>
+                </ImageView>
+                <Label fx:id="welcomeLabel" styleClass="topbar-title" text="Administrator"/>
+            </HBox>
+            <Button text="Log out" styleClass="button-ghost" onAction="#logout"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane fx:id="workspaceTabs" styleClass="workspace-tabs" tabClosingPolicy="UNAVAILABLE">
+
+            <Tab text="Overview">
+                <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+                    <VBox spacing="18">
+                        <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+
+                        <HBox spacing="16">
+                            <HBox styleClass="stat-card" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                                <StackPane styleClass="stat-icon-well, stat-icon-well-accent">
+                                    <Group>
+                                        <SVGPath content="M8.6,3.4 A3.8,3.8 0 1 0 8.6,11 A3.8,3.8 0 1 0 8.6,3.4 Z M8.6,12.6 C4.8,12.6 1.6,15 1.6,18.2 V21 H15.6 V18.2 C15.6,15 12.4,12.6 8.6,12.6 Z M17.2,5.2 A3.2,3.2 0 1 0 17.2,11.6 A3.2,3.2 0 1 0 17.2,5.2 Z M17.2,13 C16.6,13 16.1,13.1 15.6,13.2 C16.9,14.6 17.6,16.3 17.6,18.2 V21 H22.4 V18.2 C22.4,15.3 20.1,13 17.2,13 Z" styleClass="stat-icon-accent" fillRule="EVEN_ODD">
+                                            <transforms><Scale x="0.76" y="0.76"/></transforms>
+                                        </SVGPath>
+                                    </Group>
+                                </StackPane>
+                                <VBox spacing="4">
+                                    <Label text="TOTAL DONORS" styleClass="stat-label"/>
+                                    <Label fx:id="totalDonorsLabel" styleClass="stat-value-accent" text="—"/>
+                                </VBox>
+                            </HBox>
+                            <HBox styleClass="stat-card" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                                <StackPane styleClass="stat-icon-well">
+                                    <Group>
+                                        <SVGPath content="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 Z M10.9,5.8 H13.1 V12.3 L17.1,14.6 L16,16.5 L10.9,13.6 Z" styleClass="stat-icon" fillRule="EVEN_ODD">
+                                            <transforms><Scale x="0.76" y="0.76"/></transforms>
+                                        </SVGPath>
+                                    </Group>
+                                </StackPane>
+                                <VBox spacing="4">
+                                    <Label text="PENDING REQUESTS" styleClass="stat-label"/>
+                                    <Label fx:id="pendingRequestsLabel" styleClass="stat-value" text="—"/>
+                                </VBox>
+                            </HBox>
+                            <HBox styleClass="stat-card" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                                <StackPane styleClass="stat-icon-well">
+                                    <Group>
+                                        <SVGPath content="M12,2 C12,2 5,10.6 5,14.9 A7,7 0 0 0 19,14.9 C19,10.6 12,2 12,2 Z" styleClass="stat-icon" fillRule="EVEN_ODD">
+                                            <transforms><Scale x="0.76" y="0.76"/></transforms>
+                                        </SVGPath>
+                                    </Group>
+                                </StackPane>
+                                <VBox spacing="4">
+                                    <Label text="ACTIVE REQUESTS" styleClass="stat-label"/>
+                                    <Label fx:id="activeRequestsLabel" styleClass="stat-value" text="—"/>
+                                </VBox>
+                            </HBox>
+                            <HBox styleClass="stat-card" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                                <StackPane styleClass="stat-icon-well, stat-icon-well-accent">
+                                    <Group>
+                                        <SVGPath content="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 Z M10.7,16.6 L6.2,12.1 L8,10.3 L10.7,13 L16,7.7 L17.8,9.5 Z" styleClass="stat-icon-accent" fillRule="EVEN_ODD">
+                                            <transforms><Scale x="0.76" y="0.76"/></transforms>
+                                        </SVGPath>
+                                    </Group>
+                                </StackPane>
+                                <VBox spacing="4">
+                                    <Label text="FULFILLMENT RATE" styleClass="stat-label"/>
+                                    <Label fx:id="fulfillmentRateLabel" styleClass="stat-value-accent" text="—"/>
+                                </VBox>
+                            </HBox>
+                        </HBox>
+
+                        <VBox spacing="10" styleClass="content-card">
+                            <Label text="Blood-group demand (all requests)" styleClass="section-title"/>
+                            <BarChart fx:id="demandChart" legendVisible="false" prefHeight="260">
+                                <xAxis><CategoryAxis label="Blood group"/></xAxis>
+                                <yAxis><NumberAxis label="Requests"/></yAxis>
+                            </BarChart>
+                        </VBox>
+
+                        <HBox spacing="16">
+                            <VBox spacing="10" styleClass="content-card" HBox.hgrow="ALWAYS">
+                                <Label text="Monthly request volume" styleClass="section-title"/>
+                                <LineChart fx:id="monthlyChart" legendVisible="false" prefHeight="240">
+                                    <xAxis><CategoryAxis label="Month"/></xAxis>
+                                    <yAxis><NumberAxis label="Requests"/></yAxis>
+                                </LineChart>
+                            </VBox>
+                            <VBox spacing="10" styleClass="content-card" HBox.hgrow="ALWAYS">
+                                <Label text="Requests by status" styleClass="section-title"/>
+                                <PieChart fx:id="statusChart" prefHeight="240" legendSide="BOTTOM"/>
+                            </VBox>
+                        </HBox>
+
+                        <VBox spacing="10" styleClass="content-card">
+                            <Label text="Live Activity Feed" styleClass="section-title"/>
+                            <ActivityFeed fx:id="activityFeed" prefHeight="250"/>
+                        </VBox>
+
+                        <Label fx:id="statusMessageLabel" styleClass="helper-text" text=""/>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+
+            <Tab text="Users">
+                <VBox spacing="14">
+                    <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="userSearchField" promptText="Search name, email, or district..." HBox.hgrow="ALWAYS"/>
+                        <javafx.scene.control.CheckBox fx:id="pendingUsersOnlyCheck" text="Pending Approval Only" selected="true"/>
+                        <Button text="Approve" styleClass="button-primary" onAction="#approveSelectedUser"/>
+                        <Button text="Suspend" styleClass="button-danger-outline" onAction="#suspendSelectedUser"/>
+                        <Button text="Activate" styleClass="button-secondary" onAction="#activateSelectedUser"/>
+                        <Button text="View Profile" styleClass="button-secondary" onAction="#viewSelectedProfile"/>
+                        <Button text="Medical documents" styleClass="button-secondary" onAction="#viewSelectedDocuments"/>
+                        <Button text="Reset Password" styleClass="button-ghost" onAction="#resetSelectedPassword"/>
+                    </HBox>
+                    <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="userIdColumn" text="ID" prefWidth="50"/>
+                            <TableColumn fx:id="userNameColumn" text="Name" prefWidth="160"/>
+                            <TableColumn fx:id="userEmailColumn" text="Email" prefWidth="200"/>
+                            <TableColumn fx:id="userRoleColumn" text="Role" prefWidth="90"/>
+                            <TableColumn fx:id="userDistrictColumn" text="District" prefWidth="110"/>
+                            <TableColumn fx:id="userApprovedColumn" text="Approval" prefWidth="100"/>
+                            <TableColumn fx:id="userActiveColumn" text="Status" prefWidth="100"/>
+                            <TableColumn fx:id="userCreatedColumn" text="Joined" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="◀ Previous" styleClass="button-ghost" onAction="#previousUserPage"/>
+                        <Label fx:id="userPageLabel" styleClass="helper-text" text="Page 1"/>
+                        <Button text="Next ▶" styleClass="button-ghost" onAction="#nextUserPage"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <Tab text="Requests">
+                <VBox spacing="14">
+                    <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="requestSearchField" promptText="Search requester, hospital, or district..." HBox.hgrow="ALWAYS"/>
+                        <Button text="Escalate" styleClass="button-secondary" onAction="#escalateSelectedRequest"/>
+                        <Button text="Close" styleClass="button-danger-outline" onAction="#closeSelectedRequest"/>
+                    </HBox>
+                    <TableView fx:id="requestTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="requestIdColumn" text="ID" prefWidth="50"/>
+                            <TableColumn fx:id="requesterColumn" text="Requester" prefWidth="150"/>
+                            <TableColumn fx:id="requestBloodColumn" text="Group" prefWidth="70"/>
+                            <TableColumn fx:id="requestUnitsColumn" text="Units" prefWidth="60"/>
+                            <TableColumn fx:id="requestProgressColumn" text="Progress" prefWidth="90"/>
+                            <TableColumn fx:id="requestUrgencyColumn" text="Urgency" prefWidth="90"/>
+                            <TableColumn fx:id="requestHospitalColumn" text="Hospital" prefWidth="200"/>
+                            <TableColumn fx:id="requestDistrictColumn" text="District" prefWidth="100"/>
+                            <TableColumn fx:id="requestStatusColumn" text="Status" prefWidth="130"/>
+                            <TableColumn fx:id="requestCreatedColumn" text="Created" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="◀ Previous" styleClass="button-ghost" onAction="#previousRequestPage"/>
+                        <Label fx:id="requestPageLabel" styleClass="helper-text" text="Page 1"/>
+                        <Button text="Next ▶" styleClass="button-ghost" onAction="#nextRequestPage"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <Tab text="Demand">
+                <VBox spacing="14">
+                    <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+                    <Label text="Pending demand versus available donors, by blood group" styleClass="section-title"/>
+                    <TableView fx:id="demandTable" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="demandBloodColumn" text="Blood Group" prefWidth="140"/>
+                            <TableColumn fx:id="demandPendingColumn" text="Pending Requests" prefWidth="150"/>
+                            <TableColumn fx:id="demandAvailableColumn" text="Available Donors" prefWidth="150"/>
+                            <TableColumn fx:id="demandGapColumn" text="Gap" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                    <Label text="Pending demand versus available donors, by district -- sorted so the districts needing attention surface first" styleClass="section-title"/>
+                    <TableView fx:id="districtDemandTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="districtDemandDistrictColumn" text="District" prefWidth="160"/>
+                            <TableColumn fx:id="districtDemandPendingColumn" text="Pending Requests" prefWidth="150"/>
+                            <TableColumn fx:id="districtDemandAvailableColumn" text="Available Donors" prefWidth="150"/>
+                            <TableColumn fx:id="districtDemandGapColumn" text="Gap" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <Tab text="Audit Log">
+                <VBox spacing="14">
+                    <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+                    <Label text="Most recent 200 administrative and system events" styleClass="section-title"/>
+                    <TableView fx:id="auditTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="auditTimeColumn" text="When" prefWidth="150"/>
+                            <TableColumn fx:id="auditActorColumn" text="Actor" prefWidth="150"/>
+                            <TableColumn fx:id="auditActionColumn" text="Action" prefWidth="160"/>
+                            <TableColumn fx:id="auditEntityColumn" text="Entity" prefWidth="150"/>
+                            <TableColumn fx:id="auditDetailsColumn" text="Details" prefWidth="300"/>
+                        </columns>
+                    </TableView>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="◀ Previous" styleClass="button-ghost" onAction="#previousAuditPage"/>
+                        <Label fx:id="auditPageLabel" styleClass="helper-text" text="Page 1"/>
+                        <Button text="Next ▶" styleClass="button-ghost" onAction="#nextAuditPage"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <Tab text="Settings">
+                <VBox spacing="14">
+                    <padding><Insets top="20" right="24" bottom="24" left="24"/></padding>
+                    <Label text="Application Settings" styleClass="section-title"/>
+                    <VBox spacing="8" styleClass="content-card">
+                        <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                        <Label text="Custom App Logo" styleClass="field-label"/>
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Button text="Upload New Logo" onAction="#uploadLogo" styleClass="button-secondary"/>
+                            <Button text="Reset to Default" onAction="#resetLogo" styleClass="button-danger-outline"/>
+                        </HBox>
+                        <Label text="Changes the logo displayed across all screens." styleClass="helper-text"/>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+</BorderPane>

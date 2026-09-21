@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Set your location</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <script>window.L_DISABLE_3D = true;</script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;
+                     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #map { position: absolute; inset: 0; background: #e7eeec; }
+        .leaflet-tile { transition: none !important; -webkit-transition: none !important;
+                        backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .leaflet-tile-container { transform: none !important; -webkit-transform: none !important; }
+        .leaflet-container { cursor: crosshair; }
+        /* Zoom buttons sit below the hint so the two never cover each other. */
+        .leaflet-top.leaflet-left { margin-top: 62px; }
+        #hint {
+            position: absolute; left: 10px; right: 10px; top: 10px; z-index: 1000;
+            background: rgba(7, 48, 31, 0.92); color: #fff; border-radius: 10px;
+            padding: 9px 13px; font-size: 12px; line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="hint"><b>Click the map to drop your pin.</b> Drag it to fine-tune.</div>
+
+    <script>
+        var map = L.map('map', {
+            fadeAnimation: false, zoomAnimation: false, markerZoomAnimation: false, preferCanvas: true
+        }).setView([23.8103, 90.4125], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap', updateWhenIdle: true, keepBuffer: 3
+        }).addTo(map);
+
+        var pin = null;
+        var radiusRing = null;
+        var radiusKm = 15;
+
+        function resizeMap() { if (map) map.invalidateSize({ animate: false, pan: false }); }
+        window.addEventListener('resize', resizeMap);
+        [50, 150, 300, 600, 1200].forEach(function (d) { setTimeout(resizeMap, d); });
+
+        function publish(lat, lng) {
+            if (window.bridge && window.bridge.onPinMoved) {
+                window.bridge.onPinMoved(lat, lng);
+            }
+        }
+
+        /* The ring is the travel radius drawn to scale, so the number on the
+           slider means something geographic instead of being an abstract
+           figure the user has to imagine. */
+        function drawRadius(lat, lng) {
+            if (radiusRing) { map.removeLayer(radiusRing); radiusRing = null; }
+            radiusRing = L.circle([lat, lng], {
+                radius: radiusKm * 1000,
+                color: '#15794D', weight: 1.5, fillColor: '#1E9760', fillOpacity: 0.10
+            }).addTo(map);
+        }
+
+        function placePin(lat, lng) {
+            if (pin) {
+                pin.setLatLng([lat, lng]);
+            } else {
+                pin = L.marker([lat, lng], { draggable: true }).addTo(map);
+                pin.on('dragend', function () {
+                    var p = pin.getLatLng();
+                    drawRadius(p.lat, p.lng);
+                    publish(p.lat, p.lng);
+                });
+            }
+            drawRadius(lat, lng);
+            publish(lat, lng);
+        }
+
+        map.on('click', function (e) { placePin(e.latlng.lat, e.latlng.lng); });
+
+        /* Called by Java. */
+        function startAt(lat, lng, zoom, withPin) {
+            map.setView([lat, lng], zoom, { animate: false });
+            if (withPin) placePin(lat, lng);
+            resizeMap();
+        }
+
+        function setRadiusKm(km) {
+            radiusKm = km;
+            if (pin) {
+                var p = pin.getLatLng();
+                drawRadius(p.lat, p.lng);
+            }
+        }
+
+        /* Fits the view to the whole radius ring, so changing the slider shows
+           the area it actually covers rather than leaving it off-screen. */
+        function fitRadius() {
+            if (radiusRing) map.fitBounds(radiusRing.getBounds().pad(0.08), { animate: false });
+        }
+    </script>
+</body>
+</html>
