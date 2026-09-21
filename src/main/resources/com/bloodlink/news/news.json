@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "News shown in the carousel on the home page. Edit this file to change it -- no code change needed.",
+    "image: a file name inside resources/com/bloodlink/images/news/. Leave it as-is and drop your PNG",
+    "there using that exact name, or point it at whatever you call your file.",
+    "url: opened in the system browser when the card is clicked. Omit or leave blank for a card that",
+    "is not clickable.",
+    "Add or remove entries freely; the carousel adapts to however many are here."
+  ],
+  "items": [
+    {
+      "title": "Every two seconds, someone needs blood",
+      "source": "World Health Organization",
+      "image": "news-1.png",
+      "url": "https://www.who.int/campaigns/world-blood-donor-day"
+    },
+    {
+      "title": "Bangladesh needs around 900,000 bags of blood each year",
+      "source": "Bangladesh Red Crescent Society",
+      "image": "news-2.png",
+      "url": "https://bdrcs.org/"
+    },
+    {
+      "title": "Thalassaemia patients depend on transfusions every few weeks",
+      "source": "Thalassaemia International Federation",
+      "image": "news-3.png",
+      "url": "https://thalassaemia.org.cy/"
+    },
+    {
+      "title": "Safe blood saves mothers during childbirth",
+      "source": "World Health Organization",
+      "image": "news-4.png",
+      "url": "https://www.who.int/news-room/fact-sheets/detail/blood-safety-and-availability"
+    }
+  ]
+}
