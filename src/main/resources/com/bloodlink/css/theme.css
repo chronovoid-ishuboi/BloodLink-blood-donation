@@ -1,0 +1,1131 @@
+/* ============================================================================
+   BloodLink design system -- "clinical green".
+
+   Replaces the previous teal/rose scheme. The story: deep clinical green for
+   trust, structure and every primary action; crimson kept strictly for
+   emergency, urgency and destructive states, so red always MEANS something on
+   screen instead of being decoration. Backgrounds are a pale mint off-white
+   rather than stark white, so cards lift off the page without needing heavy
+   shadows.
+
+   Everything is expressed as looked-up colour tokens on .root below. Nodes
+   built in Java must use these style classes rather than hand-rolled hex in
+   setStyle() calls -- the whole colour story lives in this one file.
+
+   JavaFX CSS notes that shaped this file (they are NOT the same as browser CSS):
+     - There is no `transition` property. Hover/press states are discrete rule
+       swaps; real motion (pulse, tab underline) is done in Java with Timeline.
+     - `-fx-background-radius: 50%` is not supported. Circles use a large px
+       radius (999) or a Circle clip in Java.
+     - ImageView is not a Region, so background/border/radius do not apply to
+       it. Circular photo crops are done with a Circle clip in Java.
+   ========================================================================= */
+
+/* Poppins is bundled locally under fonts/ (SIL OFL licensed -- see
+   fonts/OFL.txt) and loaded via Font.loadFont() in util.Fonts at startup,
+   NOT via @font-face here -- JavaFX's CSS parser does not support a
+   font-weight descriptor inside @font-face at all (every attempt logs
+   "CSS Error ... Unexpected TOKEN" and silently drops the rule), so there is
+   no way to point one family name at six weight-specific TTFs from CSS
+   alone. Google's static Poppins build only keeps Regular and Bold under the
+   plain "Poppins" family (JavaFX picks between them via -fx-font-weight:
+   normal/bold as usual); every other weight registers as its own distinct
+   family -- "Poppins Medium", "Poppins SemiBold", "Poppins ExtraBold",
+   "Poppins Black" -- confirmed by loading each file and reading back
+   Font.getFamily(). Every rule below using one of those four weights sets
+   -fx-font-family explicitly alongside -fx-font-weight for that reason. */
+.root {
+    -fx-font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 13px;
+    /* Pairs with prism.lcdtext=false in Main: subpixel antialiasing puts
+       colour fringes on glyph edges, which reads as pixelated text and is
+       worst over the coloured and gradient panels this UI is built from. */
+    -fx-font-smoothing-type: gray;
+
+    /* --- Brand greens. Deeper and more saturated than the previous set:
+       the deep end is now a true forest that can carry a full-bleed slab
+       behind white display type, and the light end is warm rather than
+       clinical so cards read as paper, not as panels. ------------------- */
+    -green-900: #07301F;
+    -green-800: #0C472E;
+    -green-700: #10613E;
+    -green-600: #15794D;
+    -green-500: #1E9760;
+    -green-400: #35B179;
+    -green-300: #7FCEA6;
+    -green-100: #DAF0E4;
+    -green-50:  #F0F8F3;
+
+    /* --- Emergency crimson (urgency, danger, destructive) ---------------- */
+    -red-700: #96202F;
+    -red-600: #B92A3B;
+    -red-500: #D33A4B;
+    -red-300: #F0A5AE;
+    -red-100: #FBE2E5;
+
+    /* --- Semantic states -- one accessible colour each, reused everywhere - */
+    -state-success: #14734C;
+    -state-success-bg: #DDF0E6;
+    -state-pending: #8A5A11;
+    -state-pending-bg: #FCEFD6;
+    -state-danger: #96202F;
+    -state-danger-bg: #FBE2E5;
+    -state-info: #1D5A73;
+    -state-info-bg: #DCEDF4;
+    -state-neutral: #566B62;
+    -state-neutral-bg: #E7EEE9;
+
+    /* --- Surfaces and text. The canvas is a warm paper off-white rather
+       than a tinted grey, so white cards lift off it with almost no
+       shadow -- the reference layouts get their depth from that contrast
+       plus generous radius, not from heavy drop shadows. ---------------- */
+    -surface: #FFFFFF;
+    -surface-sunken: #F4F7F4;
+    -page-bg: #F7F7F4;
+    -canvas-warm: #FBFAF7;
+    -hairline: #E6EBE6;
+    -text-primary: #0F1F18;
+    -text-secondary: #56685F;
+    -text-muted: #8A9A91;
+    -text-on-dark: #F1FAF5;
+
+    /* --- Form fields. Their own tokens rather than literals, because the
+       dark theme has to move them independently of -surface: an input needs
+       to sit *below* the card it is on, which means lighter than the card on
+       a light page and darker than it on a dark one. -------------------- */
+    -field-bg: #FBFDFC;
+    -field-border: #C9DCD1;
+
+    -fx-text-fill: -text-primary;
+    -fx-accent: -green-600;
+    -fx-focus-color: -green-500;
+    -fx-faint-focus-color: rgba(35,147,93,0.18);
+}
+
+/* ============================================================================
+   ██ APP SHELL — sidebar rail + page host
+   The tab bar is gone. Every workspace is now a fixed left rail of
+   destinations against a full-height content area that swaps pages with a
+   transition (see util.PageHost). This is the structural change the rest of
+   the visual language hangs off: pages get to own a full-bleed hero, and
+   navigation stops being a row of cramped text tabs across the top.
+   ========================================================================= */
+.app-shell { -fx-background-color: -page-bg; }
+
+.nav-rail {
+    -fx-background-color: linear-gradient(to bottom, -green-800, -green-900);
+    -fx-padding: 26 16 22 16;
+    -fx-spacing: 4;
+}
+.nav-rail-brand { -fx-padding: 0 8 26 8; -fx-alignment: center-left; -fx-spacing: 11; }
+.nav-rail-wordmark { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 19px; -fx-text-fill: white; }
+.nav-rail-section {
+    -fx-font-size: 10px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-text-fill: rgba(255,255,255,0.38); -fx-padding: 18 10 7 10;
+}
+
+/* One destination. The active item is a filled pill; the moving highlight
+   behind it is a separate node animated in Java (NavRail), so switching
+   pages slides rather than jumps. */
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 13;
+    -fx-padding: 11 14;
+    -fx-spacing: 12;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+}
+.nav-item:hover { -fx-background-color: rgba(255,255,255,0.08); }
+.nav-item-label { -fx-font-size: 13px; -fx-font-family: "Poppins Medium"; -fx-text-fill: rgba(255,255,255,0.72); }
+.nav-item-icon { -fx-fill: rgba(255,255,255,0.6); }
+.nav-item-active .nav-item-label { -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -green-900; }
+.nav-item-active .nav-item-icon { -fx-fill: -green-800; }
+.nav-item-active:hover { -fx-background-color: transparent; }
+/* The sliding pill itself. */
+.nav-highlight { -fx-background-color: -green-300; -fx-background-radius: 13; }
+.nav-badge {
+    -fx-background-color: -red-500; -fx-background-radius: 999;
+    -fx-text-fill: white; -fx-font-size: 10px;
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-padding: 2 7; -fx-alignment: center;
+}
+/* Collapse/expand control. Nudges outward on a loop while collapsed (driven
+   from NavRail) so bringing the rail back is signposted, not guesswork. */
+.nav-collapse-arrow {
+    -fx-text-fill: rgba(255,255,255,0.55);
+    -fx-font-size: 20px;
+    -fx-font-family: "Poppins SemiBold";
+    -fx-padding: 0 4 3 4;
+    -fx-cursor: hand;
+}
+.nav-collapse-arrow:hover { -fx-text-fill: white; }
+
+/* Footer profile picture: square (passport), with a drawn person glyph
+   standing in until one is uploaded. */
+.nav-avatar-holder { -fx-min-width: 38; -fx-min-height: 38; -fx-max-width: 38; -fx-max-height: 38; }
+.nav-avatar-placeholder {
+    -fx-background-color: rgba(255,255,255,0.14);
+    -fx-background-radius: 9;
+    -fx-min-width: 38; -fx-min-height: 38; -fx-max-width: 38; -fx-max-height: 38;
+    -fx-alignment: center;
+}
+.nav-avatar-placeholder-icon { -fx-fill: rgba(255,255,255,0.65); }
+
+.nav-rail-footer { -fx-padding: 14 8 0 8; -fx-spacing: 10; -fx-alignment: center-left; }
+.nav-rail-user { -fx-font-size: 12px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: white; }
+.nav-rail-role { -fx-font-size: 10px; -fx-text-fill: -green-300; }
+.nav-logout {
+    -fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 11;
+    -fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 8 14; -fx-effect: none; -fx-cursor: hand;
+}
+.nav-logout:hover { -fx-background-color: rgba(255,255,255,0.2); }
+
+/* The area pages live in. */
+.page-host { -fx-background-color: -page-bg; }
+.page-scroll, .page-scroll > .viewport { -fx-background-color: transparent; }
+.page-body { -fx-padding: 0 0 52 0; -fx-spacing: 32; }
+
+/* ============================================================================
+   ██ HERO — the full-bleed slab at the top of a page
+   Lifted from the reference layouts: a deep green field carrying oversized
+   display type, with the page's own content cards overlapping its lower
+   edge so the two planes interlock instead of stacking.
+   ========================================================================= */
+.hero {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -green-700, -green-900);
+    /* Deeper top inset than bottom: the header sat hard against the top edge
+       of the slab, so the title read as clipped rather than placed. */
+    -fx-padding: 62 46 74 46;
+    -fx-spacing: 16;
+}
+.hero-eyebrow {
+    -fx-font-size: 11px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-text-fill: -green-300;
+}
+/* The page's name. Deliberately NOT the heaviest weight: large and light
+   reads as a title, whereas Poppins Black at this size reads as a slab.
+   Smaller than the 44px display it replaces, because it is now a label for
+   the page rather than a headline competing with the page's own content. */
+.hero-title {
+    -fx-font-family: "Poppins Medium"; -fx-font-weight: 500;
+    -fx-font-size: 33px; -fx-text-fill: white;
+    -fx-line-spacing: 4px;
+    -fx-padding: 0 0 2 0;
+}
+.hero-sub {
+    -fx-font-size: 14.5px; -fx-text-fill: rgba(255,255,255,0.8);
+    -fx-line-spacing: 3px; -fx-padding: 2 0 2 0;
+}
+/* Pill chip with a leading dot, straight off the reference nav/buttons. */
+.hero-pill {
+    -fx-background-color: rgba(255,255,255,0.14); -fx-background-radius: 999;
+    -fx-padding: 7 15; -fx-spacing: 8; -fx-alignment: center-left;
+}
+.hero-pill-text { -fx-font-size: 11px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: white; }
+.hero-pill-dot { -fx-fill: -green-300; }
+/* Content that overlaps the hero's bottom edge. */
+.hero-overlap { -fx-padding: -42 46 0 46; -fx-spacing: 18; }
+.page-gutter { -fx-padding: 34 46 0 46; -fx-spacing: 26; }
+
+/* ============================================================================
+   ██ DISPLAY TYPOGRAPHY
+   ========================================================================= */
+.display-lg { -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-font-size: 38px; -fx-text-fill: -text-primary; }
+.display-md { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 26px; -fx-text-fill: -text-primary; }
+.eyebrow {
+    -fx-font-size: 10px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-text-fill: -green-600;
+}
+.lede { -fx-font-size: 15px; -fx-text-fill: -text-secondary; }
+
+/* ============================================================================
+   ██ SURFACE CARDS — bigger radius, near-flat, warm
+   ========================================================================= */
+.surface-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 22;
+    -fx-padding: 22;
+    -fx-effect: dropshadow(gaussian, rgba(12,71,46,0.09), 10, 0, 0, 3);
+}
+.surface-card-tint {
+    -fx-background-color: -green-700;
+    -fx-background-radius: 22;
+    -fx-padding: 22;
+}
+.surface-card-tint .metric-value, .surface-card-tint .metric-label { -fx-text-fill: white; }
+.surface-card-outline {
+    -fx-background-color: -surface; -fx-background-radius: 22; -fx-padding: 22;
+    -fx-border-color: -hairline; -fx-border-radius: 22; -fx-effect: none;
+}
+
+.metric-value { -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-font-size: 32px; -fx-text-fill: -text-primary; }
+.metric-value-sm { -fx-font-size: 23px; }
+.metric-label { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+.metric-delta { -fx-font-size: 11px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -green-500; }
+
+/* ============================================================================
+   ██ QUICK ACTION TILES — the 2x2 grid from the mobile references
+   ========================================================================= */
+.action-tile {
+    -fx-background-color: -surface;
+    -fx-background-radius: 20;
+    -fx-padding: 18;
+    -fx-spacing: 13;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(12,71,46,0.08), 8, 0, 0, 2);
+}
+.action-tile:hover { -fx-effect: dropshadow(gaussian, rgba(12,71,46,0.14), 12, 0, 0, 4); }
+.action-tile-well {
+    -fx-background-color: -green-100; -fx-background-radius: 15;
+    -fx-min-width: 46; -fx-min-height: 46; -fx-max-width: 46; -fx-max-height: 46;
+    -fx-alignment: center;
+}
+.action-tile-well-accent { -fx-background-color: -red-100; }
+.action-tile-icon { -fx-fill: -green-700; }
+.action-tile-icon-accent { -fx-fill: -red-600; }
+.action-tile-title { -fx-font-size: 14px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -text-primary; }
+.action-tile-sub { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+
+/* Progress row, as in the reference "Top Causes" panel. */
+.progress-row-label { -fx-font-size: 13px; -fx-font-family: "Poppins Medium"; -fx-text-fill: -text-primary; }
+.progress-row-value { -fx-font-size: 12px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -text-secondary; }
+.progress-track { -fx-background-color: -surface-sunken; -fx-background-radius: 999; -fx-min-height: 8; -fx-max-height: 8; }
+.progress-fill { -fx-background-color: -green-500; -fx-background-radius: 999; -fx-min-height: 8; -fx-max-height: 8; }
+.progress-fill-accent { -fx-background-color: -red-500; }
+
+/* ============================================================================
+   ██ IMAGE SLOTS — see view.components.ImageSlot
+   Every place a photo belongs has a real, labelled slot showing the exact
+   file to drop in. With no file present the slot draws itself as a framed
+   placeholder rather than collapsing, so the layout is already the final
+   layout before any art exists.
+   ========================================================================= */
+.image-slot {
+    -fx-background-color: linear-gradient(to bottom right, -green-100, -surface-sunken);
+    -fx-background-radius: 20;
+    -fx-border-color: -green-300; -fx-border-radius: 20;
+    -fx-border-width: 1.4; -fx-border-style: segments(7, 6) line-cap round;
+    -fx-alignment: center;
+    -fx-spacing: 5;
+}
+.image-slot-title { -fx-font-size: 11px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -green-700; }
+.image-slot-path { -fx-font-size: 9px; -fx-text-fill: -text-muted; }
+.image-slot-icon { -fx-fill: -green-300; }
+
+/* ============================================================================
+   ██ LOCATION BAR — the address strip at the top of the home page
+   Crimson because it is the one control that decides whether matching works
+   for this user, and because an unset location is a problem to fix, not a
+   neutral state.
+   ========================================================================= */
+.location-bar {
+    -fx-background-color: -surface;
+    -fx-background-radius: 18;
+    -fx-padding: 14 18;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 18;
+}
+.location-bar-pin-well {
+    -fx-background-color: -red-100; -fx-background-radius: 12;
+    -fx-min-width: 40; -fx-min-height: 40; -fx-max-width: 40; -fx-max-height: 40;
+    -fx-alignment: center;
+}
+.location-bar-pin { -fx-fill: -red-600; }
+.location-bar-place {
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-font-size: 14px; -fx-text-fill: -text-primary;
+}
+.location-bar-precision { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+.location-bar-precision-warn { -fx-text-fill: -red-600; }
+.location-bar-button {
+    -fx-background-color: linear-gradient(to right, -red-600, -red-500);
+    -fx-background-radius: 999;
+    -fx-text-fill: white;
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-font-size: 12px;
+    -fx-padding: 10 18;
+    -fx-graphic-text-gap: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(185,42,59,0.28), 10, 0, 0, 3);
+}
+.location-bar-button:hover { -fx-background-color: linear-gradient(to right, -red-500, #E14A5C); }
+.location-bar-button-icon { -fx-fill: white; }
+
+/* ============================================================================
+   ██ NEWS CAROUSEL
+   ========================================================================= */
+.news-carousel { -fx-alignment: top-center; }
+.news-scrim {
+    -fx-background-color: linear-gradient(to bottom, transparent 40%, rgba(7,48,31,0.86) 100%);
+    -fx-background-radius: 26;
+}
+.news-text { -fx-padding: 20 22 20 22; }
+.news-source {
+    -fx-font-size: 10px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-text-fill: -green-300;
+}
+.news-title {
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-font-size: 17px; -fx-text-fill: white;
+}
+.news-link { -fx-padding: 6 0 0 0; }
+.news-link .label { -fx-font-size: 11px; -fx-text-fill: -green-300; -fx-font-family: "Poppins Medium"; }
+.news-link-icon { -fx-fill: -green-300; }
+.news-dot { -fx-fill: -hairline; }
+.news-dot-active { -fx-fill: -green-600; }
+
+/* ============================================================================
+   ██ SECTION ROWS — a page split into destinations (see SectionSwitcher)
+   ========================================================================= */
+.section-row {
+    -fx-background-color: -surface; -fx-background-radius: 18; -fx-padding: 16 18;
+    -fx-border-color: -hairline; -fx-border-radius: 18; -fx-cursor: hand;
+}
+.section-row:hover { -fx-border-color: -green-300; }
+.section-row-active { -fx-border-color: -green-500; -fx-border-width: 2; -fx-background-color: -green-50; }
+.section-row-chevron { -fx-fill: -text-muted; }
+
+.radius-value {
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-font-size: 19px; -fx-text-fill: -red-600;
+}
+
+/* Irreversible actions get their own visually separated block, so nothing
+   here can be reached while aiming at something ordinary. */
+.danger-zone {
+    -fx-background-color: -state-danger-bg; -fx-background-radius: 18; -fx-padding: 20;
+    -fx-border-color: -red-300; -fx-border-radius: 18;
+}
+.danger-zone-title {
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-font-size: 16px; -fx-text-fill: -red-700;
+}
+
+/* ============================================================================
+   ██ LEADERBOARD
+   ========================================================================= */
+.podium-card {
+    -fx-background-color: -surface; -fx-background-radius: 20; -fx-padding: 20 18;
+    -fx-min-width: 190; -fx-alignment: center;
+    -fx-border-color: -hairline; -fx-border-radius: 20;
+}
+/* First place is taller and carries the brand colour, so the ordering reads
+   before any number is. */
+.podium-card-first {
+    -fx-background-color: linear-gradient(to bottom, -green-700, -green-800);
+    -fx-border-color: transparent; -fx-padding: 30 18;
+}
+.podium-card-first .podium-name, .podium-card-first .podium-count { -fx-text-fill: white; }
+.podium-card-first .podium-place { -fx-text-fill: -green-300; }
+.podium-card-you { -fx-border-color: -green-500; -fx-border-width: 2; }
+.podium-place { -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-font-size: 21px; -fx-text-fill: -green-700; }
+.podium-place-1 { -fx-font-size: 25px; }
+.podium-name { -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-font-size: 14px; -fx-text-fill: -text-primary; }
+.podium-count { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+
+.rank-row {
+    -fx-background-color: -surface; -fx-background-radius: 14; -fx-padding: 12 16;
+    -fx-border-color: -hairline; -fx-border-radius: 14;
+}
+.rank-row-you { -fx-background-color: -green-50; -fx-border-color: -green-300; }
+.rank-number { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 15px; -fx-text-fill: -text-muted; }
+.rank-metric { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 17px; -fx-text-fill: -green-700; }
+/* Marks the jump between the visible top slice and the viewer's own row. */
+.rank-gap { -fx-text-fill: -text-muted; -fx-font-size: 15px; -fx-padding: 4 0; }
+
+/* Empty until a real logo file is dropped in; holds its space so adding one
+   does not shift the rail. */
+.nav-logo-slot {
+    -fx-border-color: rgba(255,255,255,0.22);
+    -fx-border-radius: 9;
+    -fx-border-width: 1.2;
+    -fx-border-style: segments(4, 4) line-cap round;
+}
+
+/* ============================================================================
+   ██ AWARENESS FIGURES
+   ========================================================================= */
+.awareness-value {
+    -fx-font-family: "Poppins Black"; -fx-font-weight: 900;
+    -fx-font-size: 27px; -fx-text-fill: -text-primary;
+}
+.awareness-headline { -fx-font-size: 12px; -fx-text-fill: -text-secondary; }
+.awareness-source { -fx-font-size: 10px; -fx-text-fill: -text-muted; }
+
+/* ============================================================================
+   ██ ABOUT — the team, the gallery, the privacy policy
+   ========================================================================= */
+/* Blood group is the one figure on this screen that is about blood, and red is
+   already this app's colour for exactly that. Everywhere else red means
+   urgency or a destructive action, which is why it is applied to this value
+   specifically and not to metric values in general. */
+.metric-value-blood { -fx-text-fill: -red-600; }
+.surface-card-tint .metric-value-blood { -fx-text-fill: white; }
+
+/* Rows and podium cards that open a profile. */
+.rank-row-clickable { -fx-cursor: hand; }
+.rank-row-clickable:hover { -fx-background-color: -green-50; }
+
+/* An attached medical report on the registration form and in the admin view. */
+.document-row {
+    -fx-background-color: -surface-sunken;
+    -fx-background-radius: 10;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 10;
+    -fx-padding: 10 14;
+}
+.document-row-name {
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-font-size: 13px; -fx-text-fill: -text-primary;
+}
+
+.about-body { -fx-font-size: 13.5px; -fx-text-fill: -text-secondary; -fx-line-spacing: 4px; }
+.about-member-name {
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600;
+    -fx-font-size: 14px; -fx-text-fill: -text-primary;
+}
+.about-member-role { -fx-font-size: 11.5px; -fx-text-fill: -green-600; }
+.about-member-note { -fx-font-size: 10.5px; -fx-text-fill: -text-muted; }
+.about-caption { -fx-font-size: 11.5px; -fx-text-fill: -text-muted; }
+
+/* ============================================================================
+   ██ AUTH SCREENS — full-height split, no floating card
+   ========================================================================= */
+.auth-panel { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -green-700, -green-900); }
+.auth-wordmark { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 25px; -fx-text-fill: white; }
+.auth-form-side { -fx-background-color: -canvas-warm; -fx-padding: 40 64; }
+.auth-stat-value { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 22px; -fx-text-fill: white; }
+.auth-stat-label { -fx-font-size: 11px; -fx-text-fill: -green-300; }
+
+/* The animated ECG trace on the sign-in panel. The dim copy underneath keeps
+   the shape readable at the instant the bright line has just cleared. */
+.heartbeat-line { -fx-stroke: -green-300; }
+.heartbeat-ghost { -fx-stroke: rgba(255,255,255,0.13); }
+
+/* ============================================================================
+   ██ FAQ ACCORDION — flat rows with a hairline, not JavaFX's grey gradient
+   ========================================================================= */
+.accordion .titled-pane { -fx-text-fill: -text-primary; }
+.accordion .titled-pane > .title {
+    -fx-background-color: -surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 14;
+    -fx-padding: 14 16;
+    -fx-cursor: hand;
+}
+.accordion .titled-pane > .title:hover { -fx-border-color: -green-300; }
+.accordion .titled-pane > .title > .text {
+    -fx-fill: -text-primary;
+    -fx-font-family: "Poppins Medium"; -fx-font-size: 13px;
+}
+.accordion .titled-pane:expanded > .title { -fx-background-radius: 14 14 0 0; -fx-border-radius: 14 14 0 0; }
+.accordion .titled-pane > .title > .arrow-button .arrow {
+    -fx-background-color: -green-700;
+    -fx-shape: "M4,6 L12,6 L8,12 Z";
+}
+.accordion .titled-pane > *.content {
+    -fx-background-color: -surface;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 0 0 14 14;
+    -fx-background-radius: 0 0 14 14;
+    -fx-padding: 4 16 14 16;
+}
+
+/* ============================================================================
+   ██ SECTION HEADER
+   ========================================================================= */
+.section-head { -fx-spacing: 5; }
+.section-head-title { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 19px; -fx-text-fill: -text-primary; }
+.section-head-sub { -fx-font-size: 12px; -fx-text-fill: -text-muted; }
+
+/* Pill button with the leading dot, matching the reference CTAs. */
+.button-pill {
+    -fx-background-color: -green-600; -fx-background-radius: 999;
+    -fx-text-fill: white; -fx-padding: 11 22;
+    -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-font-size: 13px;
+    -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(21,121,77,0.32), 14, 0, 0, 5);
+}
+.button-pill:hover { -fx-background-color: -green-500; }
+.button-pill:pressed { -fx-background-color: -green-800; -fx-effect: none; }
+.button-pill-light {
+    -fx-background-color: white; -fx-text-fill: -green-800;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 14, 0, 0, 5);
+}
+.button-pill-light:hover { -fx-background-color: -green-50; }
+
+/* ============================================================================
+   Page shells
+   ========================================================================= */
+.app-background { -fx-background-color: linear-gradient(to bottom right, #F4F8F5, #E4EFE8); }
+.auth-background { -fx-background-color: linear-gradient(to bottom right, #E7F3EB, #F6FAF7); -fx-padding: 32; }
+.auth-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 24;
+    -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.16), 14, 0, 0, 5);
+}
+
+/* The login brand panel: deep green slab with the teardrop motif, asymmetric
+   against the white form half. */
+.brand-panel {
+    -fx-background-color: linear-gradient(to bottom right, -green-700, -green-900);
+    -fx-background-radius: 24 0 0 24;
+    -fx-padding: 46;
+}
+.brand-mark { -fx-font-size: 52px; -fx-text-fill: -red-300; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5); }
+.brand-title { -fx-font-size: 38px; -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-text-fill: white; }
+.brand-tagline { -fx-font-size: 16px; -fx-text-fill: -green-300; }
+.brand-copy { -fx-font-size: 14px; -fx-line-spacing: 5px; -fx-text-fill: -text-on-dark; }
+.auth-form-panel { -fx-padding: 48; }
+
+/* Signature motif #2: the pulse/ECG line. Drawn as an SVGPath (see Icons.PULSE)
+   and used in the brand panel, section dividers and empty states so the shape
+   language repeats instead of living only in the logo. */
+.pulse-line { -fx-stroke: -green-300; -fx-stroke-width: 2; -fx-fill: transparent; }
+.pulse-line-muted { -fx-stroke: -green-100; -fx-stroke-width: 2; -fx-fill: transparent; }
+.pulse-divider { -fx-stroke: -hairline; -fx-stroke-width: 1.5; -fx-fill: transparent; }
+
+.simple-header, .topbar {
+    -fx-background-color: -surface;
+    -fx-padding: 14 22;
+    -fx-border-color: transparent transparent -hairline transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.topbar-mark { -fx-font-size: 25px; -fx-text-fill: -red-600; }
+.header-brand { -fx-font-size: 20px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-text-fill: -green-800; }
+.topbar-title { -fx-font-size: 15px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-text-fill: -text-secondary; }
+
+/* ============================================================================
+   Typography
+   ========================================================================= */
+.page-title { -fx-font-size: 25px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-text-fill: -green-900; }
+.section-title { -fx-font-size: 17px; -fx-font-weight: 700; -fx-text-fill: -green-800; }
+.field-label, .stat-label { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -text-secondary; }
+.muted-text { -fx-text-fill: -text-muted; }
+.helper-text { -fx-text-fill: -text-muted; -fx-font-size: 11px; }
+.error-text { -fx-text-fill: -state-danger; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; }
+.message-text { -fx-text-fill: -green-700; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; }
+
+/* ============================================================================
+   Cards and stat tiles
+   ========================================================================= */
+.content-card, .stat-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 16;
+    -fx-padding: 18;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.09), 8, 0, 0, 2);
+}
+.stat-card { -fx-min-height: 105px; }
+.stat-card:hover { -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.09), 8, 0, 0, 2); }
+.stat-value, .stat-value-accent { -fx-font-size: 28px; -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-text-fill: -green-800; }
+.stat-value-accent { -fx-text-fill: -red-600; }
+
+/* Icon-fronted stat tile: a tinted rounded square holding the glyph, sitting
+   left of the number rather than a bare centred stack. */
+.stat-icon-well {
+    -fx-background-color: -green-100;
+    -fx-background-radius: 12;
+    -fx-min-width: 38; -fx-min-height: 38;
+    -fx-max-width: 38; -fx-max-height: 38;
+    -fx-alignment: center;
+}
+.stat-icon-well-accent { -fx-background-color: -red-100; }
+.stat-icon { -fx-fill: -green-700; }
+.stat-icon-accent { -fx-fill: -red-600; }
+
+.subtle-panel {
+    -fx-background-color: linear-gradient(to bottom, -green-50, #E8F3EC);
+    -fx-background-radius: 14;
+    -fx-padding: 16;
+    -fx-border-color: -green-100;
+    -fx-border-radius: 14;
+}
+
+/* ============================================================================
+   Pills and counters
+   ========================================================================= */
+.pill-light, .pill-teal, .pill-green, .notification-count {
+    -fx-background-radius: 999; -fx-padding: 5 10; -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+}
+.pill-light { -fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; }
+/* .pill-teal kept as an alias of .pill-green so any FXML/Java still naming the
+   old class keeps rendering correctly after the palette change. */
+.pill-teal, .pill-green { -fx-background-color: -green-100; -fx-text-fill: -green-700; }
+.notification-count { -fx-background-color: -red-600; -fx-text-fill: white; -fx-min-width: 28; -fx-alignment: center; }
+.status-success { -fx-text-fill: -state-success; }
+.status-warning { -fx-text-fill: -state-pending; }
+
+/* ============================================================================
+   Inputs
+   ========================================================================= */
+.text-field, .password-field, .text-area, .combo-box, .date-picker, .spinner {
+    -fx-background-color: -field-bg;
+    -fx-border-color: -field-border;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-min-height: 40;
+}
+.text-field:focused, .password-field:focused, .text-area:focused,
+.combo-box:focused, .date-picker:focused, .spinner:focused {
+    -fx-border-color: -green-500; -fx-border-width: 1.5; -fx-background-color: -surface;
+}
+.text-area .content { -fx-background-color: transparent; }
+
+/* Field with a leading glyph: the icon sits in this well, the input loses its
+   own left rounding so the pair reads as one control. */
+.input-with-icon {
+    -fx-background-color: -field-bg;
+    -fx-border-color: -field-border;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-alignment: center-left;
+    -fx-padding: 0 0 0 12;
+}
+.input-with-icon:focus-within { -fx-border-color: -green-500; -fx-border-width: 1.5; -fx-background-color: -surface; }
+.input-with-icon .text-field, .input-with-icon .password-field {
+    -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0;
+}
+.input-with-icon .text-field:focused, .input-with-icon .password-field:focused {
+    -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0;
+}
+.field-icon { -fx-fill: -text-muted; }
+
+/* ============================================================================
+   Buttons
+   ========================================================================= */
+.button { -fx-cursor: hand; -fx-background-radius: 12; -fx-padding: 10 20; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.13), 5, 0, 0, 2); }
+.button-primary { -fx-background-color: linear-gradient(to right, -green-700, -green-500); -fx-text-fill: white; }
+.button-primary:hover { -fx-background-color: linear-gradient(to right, -green-600, #2AA96B); -fx-effect: dropshadow(gaussian, rgba(20,107,71,0.42), 9, 0, 0, 4); }
+.button-primary:pressed { -fx-background-color: -green-900; -fx-effect: none; }
+.button-secondary { -fx-background-color: linear-gradient(to bottom, -green-50, -green-100); -fx-text-fill: -green-800; }
+.button-secondary:hover { -fx-background-color: linear-gradient(to bottom, -green-100, #CCE7D8); }
+.button-secondary:pressed { -fx-background-color: #BCDDCB; -fx-effect: none; }
+.button-ghost { -fx-background-color: transparent; -fx-text-fill: -text-secondary; -fx-border-color: -hairline; -fx-border-radius: 12; -fx-effect: none; }
+.button-ghost:hover { -fx-background-color: -green-50; }
+.button-danger { -fx-background-color: linear-gradient(to right, -red-600, -red-500); -fx-text-fill: white; }
+.button-danger:hover { -fx-background-color: linear-gradient(to right, #C82F42, #E24557); -fx-effect: dropshadow(gaussian, rgba(185,42,59,0.42), 9, 0, 0, 4); }
+.button-danger-outline { -fx-background-color: transparent; -fx-text-fill: -red-600; -fx-border-color: -red-300; -fx-border-radius: 12; -fx-effect: none; }
+.button-danger-outline:hover { -fx-background-color: -red-100; }
+.button:disabled { -fx-opacity: 0.55; -fx-cursor: default; }
+
+/* Icon carried inside a button inherits that button's text colour role. */
+.button-icon-light { -fx-fill: white; }
+.button-icon-dark { -fx-fill: -green-800; }
+.button-icon-muted { -fx-fill: -text-secondary; }
+.button-icon-danger { -fx-fill: -red-600; }
+
+.hyperlink { -fx-text-fill: -green-700; -fx-font-weight: 700; -fx-border-color: transparent; }
+
+/* ============================================================================
+   Tabs -- icon + label, with a green active slab
+   ========================================================================= */
+.workspace-tabs .tab-header-area { -fx-padding: 6 18 0 18; }
+.workspace-tabs .tab-header-background { -fx-background-color: -surface; -fx-border-color: transparent transparent -hairline transparent; }
+.workspace-tabs .tab { -fx-background-color: transparent; -fx-padding: 8 16; }
+.workspace-tabs .tab:hover { -fx-background-color: -green-50; -fx-background-radius: 10 10 0 0; }
+.workspace-tabs .tab:selected { -fx-background-color: -green-100; -fx-background-radius: 10 10 0 0; }
+.workspace-tabs .tab:selected .tab-label { -fx-text-fill: -green-800; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.workspace-tabs .tab-label { -fx-text-fill: -text-secondary; -fx-font-weight: 700; }
+.tab-icon { -fx-fill: -text-secondary; }
+.workspace-tabs .tab:selected .tab-icon { -fx-fill: -green-700; }
+/* The animated underline under the selected tab (width is driven from Java). */
+.tab-underline { -fx-fill: -green-600; }
+
+/* ============================================================================
+   Tables
+   ========================================================================= */
+.table-view { -fx-background-color: transparent; -fx-border-color: -hairline; -fx-border-radius: 12; -fx-background-radius: 12; }
+.table-view .column-header-background { -fx-background-color: -green-50; -fx-background-radius: 12 12 0 0; }
+.table-view .column-header, .table-view .filler { -fx-background-color: transparent; -fx-size: 40; }
+.table-view .column-header .label { -fx-text-fill: -green-800; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.column-header-icon { -fx-fill: -green-600; }
+.table-row-cell { -fx-background-color: -surface; -fx-border-color: transparent transparent -hairline transparent; -fx-cell-size: 42; }
+.table-row-cell:hover { -fx-background-color: -green-50; }
+.table-row-cell:selected { -fx-background-color: -green-100; -fx-text-background-color: -green-900; }
+
+/* ============================================================================
+   Lists
+   ========================================================================= */
+.notification-list { -fx-background-color: transparent; -fx-border-color: -hairline; -fx-border-radius: 12; }
+.notification-list .list-cell { -fx-background-color: -surface; -fx-padding: 14; -fx-border-color: transparent transparent -hairline transparent; }
+.notification-list .list-cell:hover { -fx-background-color: -green-50; }
+
+/* Card-style list: the ListView itself disappears and each row is a card. Used
+   by the donor/requester match lists so a collection reads as a card stack
+   rather than a table of text. */
+.card-list, .card-list > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-background-color: transparent;
+}
+.card-list { -fx-border-color: transparent; -fx-padding: 0; }
+.card-list .list-cell { -fx-padding: 0 0 10 0; -fx-background-color: transparent; }
+.card-list .list-cell:filled:selected, .card-list .list-cell:filled:hover { -fx-background-color: transparent; }
+
+/* One match card. Hover lifts it; the selected state gets a green rail on the
+   left edge rather than a fill, so the card's own content keeps its contrast. */
+.match-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 14;
+    -fx-padding: 14;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.07), 6, 0, 0, 2);
+}
+.match-card:hover {
+    -fx-border-color: -green-300;
+    -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.07), 6, 0, 0, 2);
+}
+.card-list .list-cell:filled:selected .match-card {
+    -fx-border-color: -green-500;
+    -fx-border-width: 1 1 1 4;
+}
+.match-card-name { -fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: -text-primary; }
+.match-card-detail { -fx-font-size: 12px; -fx-text-fill: -text-secondary; }
+.match-card-icon { -fx-fill: -text-muted; }
+.match-card-hint { -fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: -green-600; }
+.match-card-hint-icon { -fx-fill: -green-600; }
+
+/* Circular avatar with initials, sized by modifier class. */
+.avatar-initials {
+    -fx-background-color: -green-700;
+    /* Square with softened corners, matching util.Avatars.squareClip: profile
+       pictures are passport-shaped throughout the app, not circular. */
+    -fx-background-radius: 18;
+    -fx-text-fill: white;
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-font-size: 28px;
+    -fx-alignment: center;
+    -fx-min-width: 84; -fx-min-height: 84; -fx-max-width: 84; -fx-max-height: 84;
+}
+.avatar-initials-sm {
+    -fx-background-radius: 11;
+    -fx-background-color: -green-100;
+    -fx-text-fill: -green-800;
+    -fx-font-size: 20px;
+    -fx-min-width: 48; -fx-min-height: 48; -fx-max-width: 48; -fx-max-height: 48;
+}
+.avatar-initials-lg {
+    -fx-background-radius: 24;
+    -fx-font-size: 36px;
+    -fx-min-width: 108; -fx-min-height: 108; -fx-max-width: 108; -fx-max-height: 108;
+}
+.avatar-photo { -fx-effect: dropshadow(gaussian, rgba(11,61,40,0.18), 8, 0.15, 0, 2); }
+
+/* ============================================================================
+   Progress / charts / scroll
+   ========================================================================= */
+.progress-bar { -fx-accent: -green-500; }
+.progress-bar .track { -fx-background-color: -green-100; -fx-background-radius: 999; }
+.progress-bar .bar { -fx-background-radius: 999; }
+.transparent-scroll, .transparent-scroll > .viewport { -fx-background-color: transparent; }
+.chart-plot-background { -fx-background-color: transparent; }
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines { -fx-stroke: -hairline; }
+.axis { -fx-tick-label-fill: -text-secondary; }
+.axis-label { -fx-text-fill: -text-secondary; -fx-font-weight: 700; }
+
+/* Chart series re-skinned to the green palette, with crimson kept for the
+   series most likely to read as "pressure" (second series / status slices). */
+.default-color0.chart-bar, .default-color0.chart-series-line { -fx-bar-fill: -green-600; -fx-stroke: -green-600; }
+.default-color1.chart-bar, .default-color1.chart-series-line { -fx-bar-fill: -red-500; -fx-stroke: -red-500; }
+.default-color2.chart-bar, .default-color2.chart-series-line { -fx-bar-fill: -green-300; -fx-stroke: -green-300; }
+.default-color0.chart-line-symbol { -fx-background-color: -green-600, white; }
+.default-color1.chart-line-symbol { -fx-background-color: -red-500, white; }
+.default-color0.chart-pie { -fx-pie-color: -green-600; }
+.default-color1.chart-pie { -fx-pie-color: -green-300; }
+.default-color2.chart-pie { -fx-pie-color: -state-pending; }
+.default-color3.chart-pie { -fx-pie-color: -red-500; }
+.default-color4.chart-pie { -fx-pie-color: -state-info; }
+.default-color5.chart-pie { -fx-pie-color: -green-900; }
+.default-color6.chart-pie { -fx-pie-color: -red-700; }
+.default-color7.chart-pie { -fx-pie-color: -state-neutral; }
+.chart-pie-label { -fx-fill: -text-secondary; }
+.chart-legend { -fx-background-color: transparent; }
+.separator .line { -fx-border-color: -hairline; }
+
+/* ============================================================================
+   Empty states -- a drawn illustration, not an italic apology
+   ========================================================================= */
+.empty-state {
+    -fx-text-fill: -text-muted;
+    -fx-font-style: italic;
+    -fx-padding: 24;
+}
+.empty-state-box { -fx-padding: 28 24; -fx-alignment: center; -fx-spacing: 10; }
+.empty-state-art { -fx-fill: -green-100; }
+.empty-state-art-accent { -fx-fill: -green-300; }
+/* Stroked, and a step darker than .empty-state-art, so the pulse reads
+   against the droplet it is drawn over rather than vanishing into it. */
+.empty-state-pulse { -fx-stroke: -green-300; -fx-stroke-width: 2.2; -fx-fill: transparent; }
+.empty-state-title { -fx-font-size: 14px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-text-fill: -text-secondary; }
+.empty-state-hint { -fx-font-size: 12px; -fx-text-fill: -text-muted; }
+
+/* ============================================================================
+   Chips
+   ========================================================================= */
+.chip {
+    -fx-background-color: -state-neutral-bg;
+    -fx-background-radius: 999;
+    -fx-padding: 4 9;
+    -fx-font-size: 10px;
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-text-fill: -state-neutral;
+}
+.chip-none { -fx-background-color: -state-neutral-bg; -fx-text-fill: -text-muted; }
+.chip-approved, .chip-active, .chip-available, .chip-accepted,
+.chip-fulfilled, .chip-verified, .chip-gold, .chip-platinum {
+    -fx-background-color: -state-success-bg; -fx-text-fill: -state-success;
+}
+.chip-pending, .chip-notified, .chip-busy, .chip-medical-hold,
+.chip-urgent, .chip-silver, .chip-cooling-down, .chip-partially-fulfilled {
+    -fx-background-color: -state-pending-bg; -fx-text-fill: -state-pending;
+}
+.chip-critical, .chip-declined, .chip-cancelled, .chip-suspended,
+.chip-expired, .chip-out-of-town, .chip-not-eligible {
+    -fx-background-color: -state-danger-bg; -fx-text-fill: -state-danger;
+}
+.chip-matched, .chip-ready, .chip-donor, .chip-requester {
+    -fx-background-color: -green-100; -fx-text-fill: -green-700;
+}
+.chip-escalated, .chip-admin, .chip-bronze {
+    -fx-background-color: -state-info-bg; -fx-text-fill: -state-info;
+}
+.chip-normal { -fx-background-color: -state-neutral-bg; -fx-text-fill: -state-neutral; }
+
+/* Blood group, shown large because it is the single fact a requester scans for. */
+.chip-blood-group {
+    -fx-background-color: -red-100;
+    -fx-text-fill: -red-700;
+    -fx-font-size: 18px;
+    -fx-font-family: "Poppins Black"; -fx-font-weight: 900;
+    -fx-padding: 6 16;
+    -fx-background-radius: 999;
+}
+.chip-lg { -fx-font-size: 12px; -fx-padding: 6 13; }
+
+/* Availability pill, coloured by status. */
+.availability-pill { -fx-background-radius: 999; -fx-padding: 5 12; -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.availability-available { -fx-background-color: -state-success-bg; -fx-text-fill: -state-success; }
+.availability-busy { -fx-background-color: -state-pending-bg; -fx-text-fill: -state-pending; }
+.availability-out-of-town { -fx-background-color: -state-neutral-bg; -fx-text-fill: -state-neutral; }
+.availability-medical-hold { -fx-background-color: -state-danger-bg; -fx-text-fill: -state-danger; }
+
+/* Urgency, with the critical variant driven by a Java pulse animation. */
+.urgency-label { -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.urgency-critical { -fx-text-fill: -red-600; }
+.urgency-urgent { -fx-text-fill: -state-pending; }
+.urgency-normal { -fx-text-fill: -state-neutral; }
+.pulse-dot { -fx-fill: -red-500; }
+
+/* ============================================================================
+   Badges (see util.BadgeRegistry -- colours come from badges.json, so these
+   classes only carry layout/typography, never the tier colour)
+   ========================================================================= */
+.badge-view { -fx-alignment: center-left; -fx-spacing: 6; }
+.badge-label { -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.badge-label-lg { -fx-font-size: 13px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; }
+.badge-chip { -fx-background-radius: 999; -fx-padding: 4 10; -fx-alignment: center-left; -fx-spacing: 6; }
+
+/* ============================================================================
+   Star rating
+   ========================================================================= */
+.star-filled { -fx-fill: #E8A33D; }
+.star-empty { -fx-fill: -hairline; }
+.favorite-star { -fx-text-fill: -text-muted; }
+.favorite-star-active { -fx-text-fill: #E8A33D; }
+.star-rating-number { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -text-secondary; -fx-padding: 0 0 0 4; }
+.star-rating-empty-note { -fx-font-size: 11px; -fx-font-style: italic; -fx-text-fill: -text-muted; }
+
+/* ============================================================================
+   Brand mark. Self-authored geometric teardrop (a bezier peak into a
+   semicircular arc base), drawn as a native JavaFX SVGPath -- zero new
+   dependencies, and it can never render as a missing-glyph box the way an
+   icon font can. Every icon in util.Icons follows this same convention.
+   ========================================================================= */
+.brand-icon { -fx-fill: -red-600; }
+.brand-icon-light { -fx-fill: -green-300; }
+
+/* ============================================================================
+   Donor profile dialog (see view.components.DonorProfileDialog)
+   ========================================================================= */
+.profile-dialog { -fx-background-color: -page-bg; }
+.profile-header {
+    -fx-background-color: linear-gradient(to bottom right, -green-700, -green-900);
+    -fx-padding: 24 28;
+}
+.profile-name { -fx-font-size: 24px; -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-text-fill: white; }
+.profile-subtle { -fx-font-size: 12px; -fx-text-fill: -green-300; }
+.profile-section-title { -fx-font-size: 15px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-text-fill: -green-800; }
+.profile-stat-tile {
+    -fx-background-color: -surface;
+    -fx-background-radius: 14;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 14;
+    -fx-padding: 14;
+    -fx-alignment: center;
+    -fx-spacing: 4;
+}
+.profile-stat-value { -fx-font-size: 19px; -fx-font-family: "Poppins Black"; -fx-font-weight: 900; -fx-text-fill: -green-800; }
+.profile-stat-label { -fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: -text-muted; }
+.profile-icon { -fx-fill: -green-600; }
+.profile-icon-muted { -fx-fill: -text-muted; }
+
+/* Contact block, and the locked variant shown before the donor accepts. */
+.contact-row { -fx-alignment: center-left; -fx-spacing: 10; }
+.contact-value { -fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: -text-primary; }
+.contact-locked {
+    -fx-background-color: -state-pending-bg;
+    -fx-background-radius: 12;
+    -fx-padding: 14;
+    -fx-border-color: #F0DDB4;
+    -fx-border-radius: 12;
+}
+.contact-locked-text { -fx-text-fill: -state-pending; -fx-font-size: 12px; -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; }
+
+/* Donation history rendered as a timeline: a rail with a node per donation. */
+.timeline-rail { -fx-background-color: -green-100; -fx-min-width: 2; -fx-max-width: 2; }
+.timeline-node { -fx-fill: -green-500; }
+.timeline-node-unverified { -fx-fill: -hairline; }
+.timeline-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 12;
+    -fx-padding: 12 14;
+}
+.timeline-date { -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-text-fill: -green-700; }
+.timeline-title { -fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: -text-primary; }
+.timeline-meta { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+
+/* Review card. */
+.review-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 12;
+    -fx-padding: 14;
+}
+.review-author { -fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: -text-primary; }
+.review-date { -fx-font-size: 11px; -fx-text-fill: -text-muted; }
+.review-comment { -fx-font-size: 12px; -fx-text-fill: -text-secondary; }
+
+/* ============================================================================
+   Activity feed (admin). The per-event icon well is tinted by event kind.
+   ========================================================================= */
+.feed-card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -hairline;
+    -fx-border-radius: 12;
+    -fx-padding: 12;
+}
+.feed-card:hover { -fx-border-color: -green-300; }
+.feed-icon-well {
+    -fx-background-radius: 999;
+    -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30;
+    -fx-alignment: center;
+    -fx-background-color: -state-neutral-bg;
+}
+.feed-icon-well-success { -fx-background-color: -state-success-bg; }
+.feed-icon-well-danger { -fx-background-color: -state-danger-bg; }
+.feed-icon-well-info { -fx-background-color: -state-info-bg; }
+.feed-icon-well-pending { -fx-background-color: -state-pending-bg; }
+.feed-icon { -fx-fill: -state-neutral; }
+.feed-icon-success { -fx-fill: -state-success; }
+.feed-icon-danger { -fx-fill: -state-danger; }
+.feed-icon-info { -fx-fill: -state-info; }
+.feed-icon-pending { -fx-fill: -state-pending; }
+.feed-actor { -fx-font-weight: bold; -fx-fill: -text-primary; }
+.feed-action { -fx-fill: -text-secondary; }
+.feed-detail { -fx-fill: -text-primary; }
+
+/* ============================================================================
+   Chat (see view.components.ChatDialog) and calling (CallDialog)
+   ========================================================================= */
+.chat-shell { -fx-background-color: -page-bg; }
+.chat-header {
+    -fx-background-color: linear-gradient(to right, -green-700, -green-800);
+    -fx-padding: 14 18;
+}
+.chat-header-name { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 15px; -fx-text-fill: white; }
+.chat-header-context { -fx-font-size: 11px; -fx-text-fill: -green-300; }
+.chat-call-button {
+    -fx-background-color: rgba(255,255,255,0.16);
+    -fx-background-radius: 999;
+    -fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36;
+    -fx-padding: 0; -fx-cursor: hand; -fx-effect: none;
+}
+.chat-call-button:hover { -fx-background-color: rgba(255,255,255,0.3); }
+.chat-call-icon { -fx-fill: white; }
+.chat-thread { -fx-background-color: transparent; }
+.chat-bubble-mine {
+    -fx-background-color: -green-600; -fx-text-fill: white;
+    -fx-background-radius: 14 14 4 14; -fx-padding: 9 13;
+}
+.chat-bubble-theirs {
+    -fx-background-color: -surface; -fx-text-fill: -text-primary;
+    -fx-background-radius: 14 14 14 4; -fx-padding: 9 13;
+    -fx-border-color: -hairline; -fx-border-radius: 14 14 14 4;
+}
+.chat-bubble-time { -fx-font-size: 10px; -fx-text-fill: -text-muted; }
+.chat-composer {
+    -fx-background-color: -surface; -fx-padding: 12 14;
+    -fx-border-color: -hairline transparent transparent transparent; -fx-border-width: 1 0 0 0;
+}
+
+.call-shell { -fx-background-color: linear-gradient(to bottom, -green-800, -green-900); -fx-padding: 40 24; }
+.call-halo { -fx-fill: -green-500; }
+.call-peer-name { -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 22px; -fx-text-fill: white; }
+.call-status { -fx-font-size: 13px; -fx-text-fill: -green-300; }
+.call-timer { -fx-font-family: "Poppins SemiBold"; -fx-font-weight: 600; -fx-font-size: 16px; -fx-text-fill: white; }
+.call-control, .call-control-end {
+    -fx-background-radius: 999; -fx-padding: 0; -fx-cursor: hand;
+    -fx-min-width: 56; -fx-min-height: 56; -fx-max-width: 56; -fx-max-height: 56;
+    -fx-background-color: rgba(255,255,255,0.18); -fx-effect: none;
+}
+.call-control:hover { -fx-background-color: rgba(255,255,255,0.3); }
+.call-control-active { -fx-background-color: white; }
+.call-control-end { -fx-background-color: -red-600; }
+.call-control-end:hover { -fx-background-color: -red-500; }
+.call-control-icon { -fx-fill: white; }
+
+/* ============================================================================
+   Blood compatibility chart (see view.components.BloodCompatibilityView).
+   Crimson for the live donation paths -- this is the one screen where red
+   IS the subject rather than an alarm state -- against muted green-grey for
+   the routes that are not possible.
+   ========================================================================= */
+.compatibility-view { -fx-padding: 4 0 0 0; }
+.compatibility-bag { -fx-fill: -red-500; -fx-effect: dropshadow(gaussian, rgba(185,42,59,0.35), 12, 0.1, 0, 4); }
+.compatibility-bag-label {
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 15px;
+    -fx-text-fill: white; -fx-padding: 12 0 0 0;
+}
+.compatibility-curve-active { -fx-stroke: -red-500; -fx-stroke-width: 2.2; -fx-fill: transparent; -fx-stroke-line-cap: round; }
+.compatibility-curve-muted { -fx-stroke: -hairline; -fx-stroke-width: 1.4; -fx-fill: transparent; }
+.compatibility-group-active {
+    -fx-background-color: -red-100; -fx-background-radius: 999;
+    -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800; -fx-font-size: 14px;
+    -fx-text-fill: -red-700;
+}
+.compatibility-group-muted {
+    -fx-background-color: -surface-sunken; -fx-background-radius: 999;
+    -fx-font-weight: 700; -fx-font-size: 13px; -fx-text-fill: -text-muted;
+    -fx-border-color: -hairline; -fx-border-radius: 999;
+}
+
+/* ============================================================================
+   Registration progress indicator
+   ========================================================================= */
+.step-dot {
+    -fx-background-color: -green-100;
+    -fx-background-radius: 999;
+    -fx-min-width: 26; -fx-min-height: 26; -fx-max-width: 26; -fx-max-height: 26;
+    -fx-alignment: center;
+    -fx-font-size: 11px; -fx-font-family: "Poppins ExtraBold"; -fx-font-weight: 800;
+    -fx-text-fill: -green-700;
+}
+.step-dot-active { -fx-background-color: -green-600; -fx-text-fill: white; }
+.step-label { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -text-secondary; }
+.step-connector { -fx-background-color: -green-100; -fx-min-height: 2; -fx-max-height: 2; }

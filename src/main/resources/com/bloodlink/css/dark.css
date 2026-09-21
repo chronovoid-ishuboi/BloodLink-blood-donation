@@ -1,0 +1,296 @@
+/* ============================================================================
+   BloodLink dark theme.
+
+   This file redefines only the colour tokens on .root. Every rule in
+   theme.css resolves its colours through those tokens rather than hard-coded
+   hex, so layering this stylesheet after theme.css re-skins the whole app
+   without duplicating a single layout or typography rule. That is the payoff
+   for keeping the palette in one place: dark mode is a token swap, not a
+   second stylesheet to maintain in parallel.
+
+   The few rules below the tokens exist because they reference white or fixed
+   translucency directly, which cannot follow a token.
+   ========================================================================= */
+
+.root {
+    /* Greens shift lighter, not darker: on a dark canvas the brand has to
+       come forward, and the deep forest that carried white text on a light
+       page disappears entirely against black. */
+    -green-900: #04160E;
+    -green-800: #0A2D1E;
+    -green-700: #10613E;
+    -green-600: #1B8A58;
+    -green-500: #2AA96B;
+    -green-400: #3FC482;
+    -green-300: #6FD8A4;
+    -green-100: #12352A;
+    -green-50:  #0E2A20;
+
+    /* Crimson lightened so it still reads as urgent rather than muddy. */
+    -red-700: #E0697A;
+    -red-600: #DE5266;
+    -red-500: #E8697C;
+    -red-300: #6B2530;
+    -red-100: #3A171E;
+
+    -state-success: #4FCB8E;
+    -state-success-bg: #123528;
+    -state-pending: #E0B25F;
+    -state-pending-bg: #35290F;
+    -state-danger: #E8697C;
+    -state-danger-bg: #3A171E;
+    -state-info: #6FB8D8;
+    -state-info-bg: #122D38;
+    -state-neutral: #9DB0A6;
+    -state-neutral-bg: #1E2823;
+
+    /* Not pure black: a near-black with a green cast keeps the app feeling
+       like the same product, and pure black against white text is harsher to
+       read for long stretches. */
+    /* Cards have to be clearly lighter than the page or the layout reads as
+       one flat sheet with text floating on it -- which is what the first pass
+       looked like, because #18231D against #0C1410 is a difference you can
+       measure and not one you can see. The gap is roughly doubled here and
+       the hairline lifted to match, so a card has both a face and an edge. */
+    -surface: #1E2B24;
+    -surface-sunken: #131E18;
+    -page-bg: #0B120E;
+    -canvas-warm: #101915;
+    -hairline: #33453A;
+    -text-primary: #E9F2EC;
+    -text-secondary: #A8BBAF;
+    -text-muted: #7C8E84;
+    -text-on-dark: #E9F2EC;
+
+    /* An input has to read as a well cut into the card it sits on. On paper
+       that means slightly lighter than the card; here it means clearly
+       darker, with a border that is visible without being a drawn box. Left
+       at the light values these were pale rectangles stuck onto dark cards,
+       which is the "doesn't blend" everyone sees immediately. */
+    -field-bg: #101A15;
+    -field-border: #3A4D42;
+
+    -fx-text-fill: -text-primary;
+    -fx-accent: -green-500;
+    -fx-focus-color: -green-400;
+    -fx-faint-focus-color: rgba(63,196,130,0.2);
+
+    /* ------------------------------------------------------------------
+       Modena's own palette.
+
+       This is the part that was missing, and it is why dark mode looked
+       half-finished no matter how many app rules were overridden. JavaFX's
+       built-in stylesheet derives most of what it draws from a handful of
+       base colours -- the inside of a text field, a list or a table comes
+       from -fx-control-inner-background, a button's face and a combo box's
+       arrow button come from -fx-base, a popup's background comes from
+       -fx-background, and the text colour of any control that has not been
+       styled by hand comes from -fx-text-base-color. Restyling .text-field
+       and friends by hand only ever reached the outer node; every internal
+       part modena draws stayed on its light defaults, so a field sat as a
+       pale slab inside a dark card and the combo box painted a white cell
+       inside its own dark frame.
+
+       Re-pointing these seven at the dark palette fixes the controls this
+       file never mentions as well as the ones it does, which is the point:
+       the theme should not need a new rule every time a screen uses a
+       control for the first time.
+       ------------------------------------------------------------------ */
+    -fx-base: #1E2B24;
+    -fx-background: #16211B;
+    -fx-control-inner-background: #101A15;
+    -fx-control-inner-background-alt: #16211B;
+    -fx-text-base-color: -text-primary;
+    -fx-text-background-color: -text-primary;
+    -fx-selection-bar: -green-700;
+    -fx-selection-bar-non-focused: #24352C;
+    -fx-mark-color: -text-primary;
+    -fx-mark-highlight-color: transparent;
+    -fx-shadow-highlight-color: transparent;
+    -fx-outer-border: -hairline;
+    -fx-inner-border: -hairline;
+    -fx-body-color: -surface;
+    -fx-light-text-color: #F2F8F4;
+    -fx-mid-text-color: -text-secondary;
+    -fx-dark-text-color: #0C1410;
+}
+
+/* ----------------------------------------------------------------------------
+   Rules that hard-code white or a fixed translucency, which no token can
+   reach.
+   ------------------------------------------------------------------------- */
+.nav-rail { -fx-background-color: linear-gradient(to bottom, #0A2317, #061009); }
+.app-shell, .page-host { -fx-background-color: -page-bg; }
+
+.surface-card, .surface-card-outline {
+    -fx-background-color: -surface;
+    -fx-border-color: -hairline;
+}
+.surface-card-tint { -fx-background-color: -green-700; }
+
+/* The fields themselves follow -field-bg/-field-border from the token block,
+   so only the parts JavaFX draws inside them need naming here. */
+.text-field, .password-field, .text-area { -fx-prompt-text-fill: -text-muted; -fx-text-fill: -text-primary; }
+.text-area, .text-area .content, .text-area .viewport { -fx-background-color: -field-bg; }
+
+/* A combo box draws its closed state as a ListCell inside its own frame. Left
+   at the popup's background that cell painted a lighter rectangle inside the
+   field -- the single most obvious "this doesn't blend" in dark mode. The
+   button cell is transparent; only the popup's rows get a surface of their
+   own. */
+.combo-box > .list-cell,
+.combo-box-base > .list-cell,
+.date-picker > .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-primary;
+}
+.combo-box-popup > .list-view {
+    -fx-background-color: -surface;
+    -fx-border-color: -hairline;
+}
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-background-color: -surface;
+    -fx-text-fill: -text-primary;
+}
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:hover,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: -green-100;
+    -fx-text-fill: -text-primary;
+}
+.combo-box .arrow, .date-picker .arrow, .spinner .increment-arrow, .spinner .decrement-arrow {
+    -fx-background-color: -text-secondary;
+}
+.combo-box .arrow-button, .date-picker .arrow-button,
+.spinner .increment-arrow-button, .spinner .decrement-arrow-button {
+    -fx-background-color: transparent;
+}
+
+/* The date picker's month grid is a popup modena paints from its own
+   defaults, so it stays white until told otherwise. */
+.date-picker-popup { -fx-background-color: -surface; -fx-border-color: -hairline; }
+.date-picker-popup > .month-year-pane { -fx-background-color: -surface-sunken; }
+.date-picker-popup > * > .day-name-cell, .date-picker-popup > * > .day-cell {
+    -fx-background-color: -surface; -fx-text-fill: -text-primary;
+}
+.date-picker-popup > * > .day-cell:hover { -fx-background-color: -green-50; }
+.date-picker-popup > * > .selected { -fx-background-color: -green-700; }
+.date-picker-popup > * > .day-cell:focused { -fx-background-color: -green-100; }
+
+/* Check boxes, tooltips and menus -- none of these appear anywhere else in
+   this file, and all three are stock modena parts that render light. */
+.check-box > .box, .radio-button > .radio { -fx-background-color: -field-bg; -fx-border-color: -field-border; }
+.check-box:selected > .box, .radio-button:selected > .radio { -fx-background-color: -green-600; -fx-border-color: -green-600; }
+.check-box > .box > .mark, .radio-button > .radio > .dot { -fx-background-color: white; }
+.check-box, .radio-button, .label { -fx-text-fill: -text-primary; }
+.tooltip { -fx-background-color: -surface; -fx-text-fill: -text-primary; -fx-border-color: -hairline; }
+.context-menu { -fx-background-color: -surface; -fx-border-color: -hairline; }
+.menu-item .label { -fx-text-fill: -text-primary; }
+.menu-item:focused { -fx-background-color: -green-100; }
+
+/* Dialogs opened from the app -- Theme registers their scenes, but the
+   header and button bar are modena's. */
+.dialog-pane { -fx-background-color: -surface; }
+.dialog-pane > .header-panel { -fx-background-color: -surface-sunken; }
+.dialog-pane > .header-panel .label { -fx-text-fill: -text-primary; }
+.dialog-pane .content.label { -fx-text-fill: -text-primary; }
+
+.table-view { -fx-border-color: -hairline; }
+.table-view .column-header-background { -fx-background-color: -surface-sunken; }
+.table-view .column-header .label { -fx-text-fill: -text-primary; }
+.table-row-cell { -fx-background-color: -surface; -fx-border-color: transparent transparent -hairline transparent; }
+.table-row-cell:hover { -fx-background-color: -green-50; }
+.table-row-cell:selected { -fx-background-color: -green-100; -fx-text-background-color: -text-primary; }
+.table-view .filler, .table-view .column-header { -fx-background-color: transparent; }
+
+.notification-list .list-cell { -fx-background-color: -surface; }
+.notification-list .list-cell:hover { -fx-background-color: -green-50; }
+.match-card, .rank-row, .section-row, .timeline-card, .review-card, .feed-card, .location-bar {
+    -fx-background-color: -surface;
+    -fx-border-color: -hairline;
+}
+.rank-row-you, .section-row-active { -fx-background-color: -green-50; }
+.podium-card { -fx-background-color: -surface; -fx-border-color: -hairline; }
+
+.auth-form-side { -fx-background-color: -canvas-warm; }
+.button-pill-light { -fx-background-color: -surface; -fx-text-fill: -text-primary; }
+.button-secondary { -fx-background-color: -green-100; -fx-text-fill: -green-300; }
+.button-ghost { -fx-text-fill: -text-secondary; -fx-border-color: -hairline; }
+.button-ghost:hover { -fx-background-color: -green-50; }
+
+.accordion .titled-pane > .title { -fx-background-color: -surface; -fx-border-color: -hairline; }
+.accordion .titled-pane > .title > .text { -fx-fill: -text-primary; }
+.accordion .titled-pane > *.content { -fx-background-color: -surface; -fx-border-color: -hairline; }
+
+.image-slot {
+    -fx-background-color: linear-gradient(to bottom right, -green-100, -surface-sunken);
+    -fx-border-color: -green-700;
+}
+.nav-logo-slot { -fx-border-color: rgba(255,255,255,0.18); }
+
+.progress-track { -fx-background-color: -surface-sunken; }
+.progress-bar > .track { -fx-background-color: -surface-sunken; }
+.chart-plot-background, .chart-content, .chart { -fx-background-color: transparent; }
+.compatibility-group-muted { -fx-background-color: -surface-sunken; -fx-border-color: -hairline; }
+
+/* Scroll bars.
+   ---------------------------------------------------------------------------
+   These carry the pseudo-class and `!important` deliberately, and it took two
+   attempts to get here. modena styles the bar as `.scroll-bar:vertical`, so a
+   plain `.scroll-bar` rule loses to it on specificity -- that was attempt one,
+   and it left a white strip down the right of every page. Matching the
+   specificity was attempt two and still lost, because modena's own scroll-bar
+   declarations are marked important, and an important user-agent declaration
+   outranks a normal author one. `!important` here is not a shortcut around a
+   specificity problem; it is the only level at which this can be answered. */
+.scroll-pane, .scroll-pane > .viewport, .scroll-pane > .corner {
+    -fx-background-color: transparent !important;
+}
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: transparent !important;
+    -fx-border-color: transparent !important;
+}
+.scroll-bar:vertical > .track, .scroll-bar:horizontal > .track,
+.scroll-bar:vertical > .track-background, .scroll-bar:horizontal > .track-background {
+    -fx-background-color: transparent !important;
+    -fx-border-color: transparent !important;
+}
+.scroll-bar:vertical > .thumb, .scroll-bar:horizontal > .thumb {
+    -fx-background-color: #3B5044 !important;
+    -fx-background-insets: 2;
+    -fx-background-radius: 6;
+}
+.scroll-bar:vertical > .thumb:hover, .scroll-bar:horizontal > .thumb:hover {
+    -fx-background-color: #4E6857 !important;
+}
+.scroll-bar:vertical > .increment-button, .scroll-bar:vertical > .decrement-button,
+.scroll-bar:horizontal > .increment-button, .scroll-bar:horizontal > .decrement-button {
+    -fx-background-color: transparent !important;
+    -fx-border-color: transparent !important;
+}
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: -text-muted !important;
+}
+
+/* The red location call-to-action. Lightening the reds for dark mode is right
+   for text and borders and wrong for this: it turned the one urgent button on
+   the home page pink. It keeps a real red here and takes its contrast from
+   being lighter than the page rather than from being pale. */
+.location-bar-button {
+    -fx-background-color: linear-gradient(to right, #C3283C, #D93E52);
+    -fx-text-fill: white;
+}
+.location-bar-button:hover {
+    -fx-background-color: linear-gradient(to right, #D93E52, #E85267);
+}
+
+/* The light page canvases behind the auth and admin screens. */
+.app-background { -fx-background-color: linear-gradient(to bottom right, #0F1913, #0A120E); }
+.auth-background { -fx-background-color: linear-gradient(to bottom right, #0E1812, #121C16); }
+
+/* Amber-bordered notice card: its background follows -state-pending-bg, but
+   the border was a literal and stayed a pale highlighter line on dark. */
+.contact-locked { -fx-border-color: #6B5726; }
+
+.button-secondary:hover { -fx-background-color: -green-700; -fx-text-fill: white; }
+.button-secondary:pressed { -fx-background-color: -green-800; }
