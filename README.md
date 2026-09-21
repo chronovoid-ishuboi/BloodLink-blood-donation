@@ -4,9 +4,8 @@ BloodLink is a comprehensive, desktop-based blood donation management system bui
 
 ## Demonstration
 
-**YouTube link:** [Presentation video on YouTube]((2) BloodLink VP Presentation - YouTube)
-
-**Drive link:** [Presentation video on Google Drive](CSE 4402 VP final project- BloodLink_presentation - Google Drive)
+* **YouTube link:** [Presentation video on YouTube](https://www.youtube.com/watch?v=vGDVH0pWq_4)
+* **Drive link:** [Presentation video on Google Drive](https://drive.google.com/drive/u/1/folders/1EYvY_by4-XlE5A1ahsHOP2dPUSUibkqY)
 
 ## Team Members
 
